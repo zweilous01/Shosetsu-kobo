@@ -11,7 +11,7 @@
 <style>
 :root{
   --bg:#f6f3ec; --paper:#fffdf8; --ink:#2b2a27; --sub:#7a766c; --line:#e3ddd0;
-  --accent:#8a3b2e; --accent-soft:#f1e3dc; --warn:#b5651d; --warn-soft:#fbeedd;
+  --accent:#8a3b2e; --accent-soft:#f1e3dc; --warn:#b5651d; --warn-soft:#fbeedd; --danger:#c0392b;
   --head:#3b3a36; --head-ink:#f6f3ec;
   --serif:"Noto Serif JP","Noto Serif CJK JP","Hiragino Mincho ProN","Yu Mincho",serif;
   --sans:system-ui,-apple-system,"Noto Sans JP","Hiragino Sans",sans-serif;
@@ -19,35 +19,37 @@
 @media (prefers-color-scheme: dark){
   :root{
     --bg:#1c1b19; --paper:#24231f; --ink:#e8e4da; --sub:#9b968a; --line:#36342f;
-    --accent:#e08a74; --accent-soft:#3a2924; --warn:#e3a35e; --warn-soft:#3a2e20;
+    --accent:#e08a74; --accent-soft:#3a2924; --warn:#e3a35e; --warn-soft:#3a2e20; --danger:#ff7b6b;
     --head:#141311; --head-ink:#e8e4da;
   }
 }
 *{box-sizing:border-box}
-html,body{margin:0;height:100%}
+html,body{margin:0;height:100%;overscroll-behavior-x:none}
 body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-tap-highlight-color:transparent}
 body.nosel{user-select:none;-webkit-user-select:none}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button:disabled{opacity:.3;cursor:default}
 input,textarea{font:inherit;color:inherit}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
 .app{min-height:100dvh;display:flex;flex-direction:column}
 .top{position:sticky;top:0;z-index:5}
 header.bar{background:var(--head);color:var(--head-ink);
-  display:flex;align-items:center;gap:4px;padding:calc(env(safe-area-inset-top) + 6px) 8px 6px;min-height:56px}
-header.bar h1{font-family:var(--serif);font-size:19px;font-weight:600;margin:0 0 0 8px;flex:1;
+  display:flex;align-items:center;gap:0;padding:calc(env(safe-area-inset-top) + 6px) 4px 6px;min-height:56px}
+header.bar h1{font-family:var(--serif);font-size:19px;font-weight:600;margin:0 0 0 10px;flex:1;min-width:0;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.04em}
-.ibtn{width:44px;height:44px;flex:none;display:grid;place-items:center;border-radius:50%;font-size:20px}
+.ibtn{width:40px;height:44px;flex:none;display:grid;place-items:center;border-radius:50%;font-size:20px}
 .ibtn:active{background:rgba(255,255,255,.12)}
 .ttl{flex:1;min-width:0;background:transparent;border:0;border-bottom:1px dashed rgba(232,228,218,.3);color:var(--head-ink);
   font-family:var(--serif);font-size:17px;padding:8px 4px;outline:none;border-radius:0}
 .ttl:focus{border-bottom-color:rgba(232,228,218,.8)}
 .ttl::placeholder{color:rgba(232,228,218,.5)}
-.status{font-size:12px;opacity:.75;padding:0 4px;white-space:nowrap}
+.status{font-size:13px;opacity:.6;width:16px;text-align:center;flex:none}
 main{flex:1;padding:12px 16px 120px;max-width:760px;width:100%;margin:0 auto}
 
-/* タブ */
-nav.tabs{display:flex;background:var(--paper);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
-nav.tabs button{flex:1 0 auto;padding:12px 14px;font-size:14px;color:var(--sub);border-bottom:2px solid transparent;white-space:nowrap}
-nav.tabs button.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+/* タブ（今いるタブは枠で囲む） */
+nav.tabs{display:flex;gap:4px;background:var(--paper);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;padding:6px 6px}
+nav.tabs button{flex:1 0 auto;padding:8px 10px;font-size:14px;color:var(--sub);border:1.5px solid transparent;border-radius:10px;white-space:nowrap}
+nav.tabs button.on{color:var(--accent);border-color:var(--accent);background:var(--accent-soft);font-weight:700}
 
 /* バックアップ帯 */
 .bk{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin:4px 0 14px;
@@ -56,21 +58,25 @@ nav.tabs button.on{color:var(--accent);border-bottom-color:var(--accent);font-we
 .bk b{flex:1;font-weight:500}
 .bk button{padding:6px 10px;border-radius:8px;border:1px solid currentColor;font-size:13px;white-space:nowrap}
 
-.hint{font-size:12px;color:var(--sub);margin:2px 4px 10px;display:flex;justify-content:space-between;gap:8px}
+.hint{font-size:12px;color:var(--sub);margin:2px 4px 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.hint .link{color:var(--accent);font-size:12px}
 .sec-title{font-size:12px;color:var(--sub);letter-spacing:.1em;margin:18px 4px 8px}
 .card{background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:12px}
 .sortbox{min-height:6px}
-.row{display:flex;align-items:center;gap:8px;padding:12px 6px 12px 14px;border-top:1px solid var(--line);min-height:56px;
+.row{display:flex;align-items:center;gap:2px;padding:10px 4px 10px 14px;border-top:1px solid var(--line);min-height:56px;
   background:var(--paper);-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
 .sortbox>.row:first-child,.card>.row:first-child{border-top:0}
-.row .main{flex:1;min-width:0;text-align:left}
+.row .main{flex:1;min-width:0;text-align:left;padding-right:4px}
 .row .t{font-family:var(--serif);font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row .m{font-size:12px;color:var(--sub);margin-top:3px;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
 .row .pv{font-size:13px;color:var(--sub);margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap}
-.more{width:40px;height:40px;border-radius:50%;color:var(--sub);font-size:20px;flex:none}
-.more:active{background:var(--line)}
+.act{width:40px;height:40px;border-radius:50%;color:var(--sub);flex:none;display:grid;place-items:center}
+.act:active{background:var(--line)}
+/* 部品「2回押し削除」：1回目で赤い「削除」に変わる */
+.del.armed{width:auto;padding:0 12px;border-radius:20px;background:var(--danger);color:#fff;font-size:13px;font-weight:600}
+header .del.armed{background:var(--danger)}
 .chap{margin-bottom:12px}
-.chap-head{display:flex;align-items:center;gap:6px;padding:4px 6px 4px 4px;background:var(--accent-soft)}
+.chap-head{display:flex;align-items:center;gap:4px;padding:4px 4px 4px 4px;background:var(--accent-soft)}
 .grip{width:36px;height:40px;flex:none;display:grid;place-items:center;color:var(--accent);opacity:.6;font-size:18px;touch-action:none;cursor:grab}
 .chap-head input{flex:1;min-width:0;background:transparent;border:0;outline:none;font-family:var(--serif);font-weight:600;font-size:15px;color:var(--accent);padding:8px 0}
 .chap-head .n{font-size:12px;color:var(--sub);white-space:nowrap}
@@ -79,19 +85,27 @@ nav.tabs button.on{color:var(--accent);border-bottom-color:var(--accent);font-we
 .fab{position:fixed;right:20px;bottom:calc(24px + env(safe-area-inset-bottom));width:60px;height:60px;border-radius:50%;
   background:var(--accent);color:#fff;font-size:30px;box-shadow:0 4px 14px rgba(0,0,0,.25);z-index:6}
 .wide-btn{display:block;width:100%;padding:14px;border-radius:12px;border:1px dashed var(--accent);color:var(--accent);font-size:15px;margin-top:4px}
+.grp{font-size:12px;color:var(--sub);padding:8px 14px;background:var(--bg);border-top:1px solid var(--line);letter-spacing:.05em}
+.card>.grp:first-child{border-top:0}
 
 /* ドラッグ中 */
 .dragging{opacity:.3}
 .ghost{position:fixed;z-index:40;pointer-events:none;box-shadow:0 10px 28px rgba(0,0,0,.28);border-radius:10px;opacity:.96;transform:scale(1.02)}
 
-/* 人物タグ */
+/* タグ（人物は丸、世界観は四角） */
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
+.dot.sq{border-radius:2px}
 .tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px 2px 6px;border-radius:10px;background:var(--bg);border:1px solid var(--line);color:var(--ink)}
 .chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
 .chip{flex:none;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:18px;border:1px solid var(--line);background:var(--paper);font-size:13px}
 .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .chip.on .dot{box-shadow:0 0 0 2px #fff}
+.chip.clear{color:var(--accent);border-style:dashed}
 .avatar{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center;color:#fff;font-family:var(--serif);font-weight:600;font-size:16px}
+.avatar.sq{border-radius:8px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{padding:5px 10px;font-size:12px;color:var(--sub)}
+.seg button.on{background:var(--accent);color:#fff}
 
 /* ネタ帳 */
 .quick{display:flex;gap:8px;align-items:flex-end;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:8px;margin-bottom:12px}
@@ -109,29 +123,44 @@ textarea.body{flex:1;width:100%;border:0;outline:none;resize:none;background:var
 .swatches{display:flex;gap:8px;flex-wrap:wrap}
 .sw{width:28px;height:28px;border-radius:50%;border:3px solid transparent}
 .sw.on{border-color:var(--ink)}
-.foot{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub);padding:6px 10px calc(6px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--paper);min-height:48px}
+.foot{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub);padding:6px 10px calc(6px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--paper);min-height:48px}
 .foot .grow{flex:1;min-width:0;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
-.fbtn{padding:7px 12px;border-radius:16px;border:1px solid var(--line);font-size:13px;color:var(--ink);white-space:nowrap}
+.fbtn{display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border-radius:16px;border:1px solid var(--line);font-size:13px;color:var(--ink);white-space:nowrap;flex:none}
+.fbtn svg.i{width:15px;height:15px}
 .fbtn.on{background:var(--accent);border-color:var(--accent);color:#fff}
 
 /* 下から出るメニュー */
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:20;display:flex;align-items:flex-end;justify-content:center}
 .sheet{background:var(--paper);width:100%;max-width:560px;border-radius:16px 16px 0 0;padding:8px 0 calc(8px + env(safe-area-inset-bottom));max-height:80dvh;overflow-y:auto}
 .sheet h3{font-size:13px;color:var(--sub);font-weight:500;margin:8px 20px 6px}
-.sheet button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:15px 20px;font-size:16px}
+.sheet h4{font-size:12px;color:var(--sub);font-weight:500;margin:10px 20px 2px;letter-spacing:.1em}
+.sheet button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:14px 20px;font-size:16px}
 .sheet button:active{background:var(--line)}
-.sheet .danger{color:#c0392b}
+.sheet button.on{color:var(--accent);font-weight:700}
 .sheet .note{font-size:12px;color:var(--sub);padding:0 20px 8px;line-height:1.6}
 .sheet .chk{width:22px;height:22px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;font-size:14px;color:#fff;flex:none}
 .sheet .chk.on{background:var(--accent);border-color:var(--accent)}
 .toast{position:fixed;left:50%;bottom:calc(100px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);
-  padding:10px 16px;border-radius:20px;font-size:14px;z-index:30;max-width:90vw}
+  padding:10px 16px;border-radius:20px;font-size:14px;z-index:30;max-width:90vw;text-align:center}
 </style>
 </head>
 <body>
 <div class="app" id="app"></div>
 <input type="file" id="importFile" accept=".json,application/json" hidden>
 <script>
+/* ===== アイコン ===== */
+const I = {
+  undo:'<svg class="i" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>',
+  redo:'<svg class="i" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/></svg>',
+  tag:'<svg class="i" viewBox="0 0 24 24"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>',
+  x:'<svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  dl:'<svg class="i" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>',
+  page:'<svg class="i" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h5"/></svg>',
+  idea:'<svg class="i" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>',
+  menu:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>',
+  back:'<svg class="i" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg>',
+};
+
 /* ===== 保存庫（スマホの中に保存） ===== */
 const DB_NAME = 'shosetsu-kobo', STORE = 'kv';
 function openDB(){
@@ -163,7 +192,7 @@ let data = null;
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const now = () => Date.now();
 const COLORS = ['#8a3b2e','#c0763a','#b59a2a','#4f7d3a','#2f7a78','#3a5f9a','#6b4a9a','#9a4a7a','#6b6b6b'];
-function emptyData(){ return { app:'shosetsu-kobo', version:2, works:[], lastBackupAt:null }; }
+function emptyData(){ return { app:'shosetsu-kobo', version:3, works:[], lastBackupAt:null }; }
 function newWork(){
   return { id:uid(), title:'無題の作品', createdAt:now(), updatedAt:now(),
     chapters:[ newChapter('第1章') ], synopsis:'', worldItems:[], ideas:[], characters:[] };
@@ -171,7 +200,7 @@ function newWork(){
 function newChapter(title){ return { id:uid(), title, episodes:[] }; }
 function newEpisode(title){ return { id:uid(), title, body:'', tags:[], updatedAt:now() }; }
 
-/* 部品「データ引き継ぎ」：古い形のデータ（v1）も今の形にそろえる */
+/* 部品「データ引き継ぎ」：古い形のデータ（v1・v2）も今の形にそろえる */
 function migrate(d){
   if (!d) return emptyData();
   d.app = 'shosetsu-kobo';
@@ -181,48 +210,107 @@ function migrate(d){
     w.synopsis = w.synopsis || '';
     w.worldItems = w.worldItems || [];
     if (typeof w.world === 'string'){ if (w.world.trim()) w.worldItems.push({ id:uid(), title:'世界観メモ', body:w.world }); delete w.world; }
+    w.worldItems.forEach((x, k) => { x.cat = x.cat || ''; x.color = x.color || COLORS[(k + 4) % COLORS.length]; x.body = x.body || ''; });
     w.ideas = (w.ideas || []).map(i => typeof i === 'string' ? { id:uid(), text:i, tags:[], used:false, createdAt:now() } : i);
-    w.ideas.forEach(i => { i.tags = i.tags || []; });
+    w.ideas.forEach(i => { i.tags = i.tags || []; i.epId = i.epId || null; });
     w.characters = w.characters || [];
   });
-  d.version = 2;
+  d.version = 3;
   return d;
 }
 
 let saveTimer = null;
-function save(){ return dbSet('data', data).then(() => setStatus('保存済み')).catch(() => setStatus('保存に失敗')); }
-function saveSoon(){ setStatus('保存中…'); clearTimeout(saveTimer); saveTimer = setTimeout(() => { saveTimer = null; save(); }, 600); }
+function save(){ return dbSet('data', data).then(() => setStatus('✓')).catch(() => setStatus('!')); }
+function saveSoon(){ setStatus('…'); clearTimeout(saveTimer); saveTimer = setTimeout(() => { saveTimer = null; save(); }, 600); }
 function flushSave(){ if (saveTimer){ clearTimeout(saveTimer); saveTimer = null; save(); } }
 document.addEventListener('visibilitychange', () => { if (document.hidden) flushSave(); });
 window.addEventListener('pagehide', flushSave);
+
+/* ===== 部品「戻る・進む」 =====
+   変更の直前の状態を控えておき、↶で1つ戻す・↷で1つ進める。
+   文字入力は、続けて打っている間はまとめて1つ扱い（2.5秒手が止まったら区切り）。
+   ※アプリを閉じると履歴は消える（仮） */
+let undoStack = [], redoStack = [], lastGroup = null, lastT = 0;
+function clone(v){ // 文字列は共有するので、長い本文でもメモリをほとんど使わない
+  if (Array.isArray(v)) return v.map(clone);
+  if (v && typeof v === 'object'){ const o = {}; for (const k in v) o[k] = clone(v[k]); return o; }
+  return v;
+}
+function rec(group){
+  const t = now();
+  if (group && group === lastGroup && t - lastT < 2500){ lastT = t; return; }
+  undoStack.push(clone(data)); if (undoStack.length > 100) undoStack.shift();
+  redoStack = []; lastGroup = group || null; lastT = t; updUndo();
+}
+function undo(){
+  flushSave(); if (!undoStack.length) return;
+  const keep = data.lastBackupAt;
+  redoStack.push(clone(data)); data = undoStack.pop(); data.lastBackupAt = keep;
+  lastGroup = null; save(); route(true); toast('1つ戻しました');
+}
+function redo(){
+  flushSave(); if (!redoStack.length) return;
+  const keep = data.lastBackupAt;
+  undoStack.push(clone(data)); data = redoStack.pop(); data.lastBackupAt = keep;
+  lastGroup = null; save(); route(true); toast('1つ進めました');
+}
+function updUndo(){
+  const u = document.getElementById('undoBtn'), r = document.getElementById('redoBtn');
+  if (u) u.disabled = !undoStack.length; if (r) r.disabled = !redoStack.length;
+}
+const undoBtns = () => `<button class="ibtn" id="undoBtn" aria-label="1つ戻る">${I.undo}</button><button class="ibtn" id="redoBtn" aria-label="1つ進む">${I.redo}</button>`;
+function bindUndo(){
+  const u = document.getElementById('undoBtn'), r = document.getElementById('redoBtn');
+  if (u) u.onclick = undo; if (r) r.onclick = redo; updUndo();
+}
 
 /* ===== 小道具 ===== */
 const $app = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const count = s => (s || '').replace(/\s/g, '').length;
 const fmtN = n => n.toLocaleString('ja-JP');
-const firstLine = s => (s || '').trim().split('\n')[0];
 function fmtDate(t){
   if (!t) return '';
   const d = new Date(t), p = n => String(n).padStart(2, '0');
   return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 function allEpisodes(w){ return w.chapters.flatMap(c => c.episodes.map(e => ({ c, e }))); }
+function findEp(w, id){ return allEpisodes(w).find(x => x.e.id === id); }
 function workChars(w){ return allEpisodes(w).reduce((a, x) => a + count(x.e.body), 0); }
 function findWork(id){ return data.works.find(w => w.id === id); }
 function touch(w){ w.updatedAt = now(); }
 function setStatus(t){ const el = document.getElementById('status'); if (el) el.textContent = t; }
 function toast(t){
+  document.querySelectorAll('.toast').forEach(x => x.remove());
   const d = document.createElement('div'); d.className = 'toast'; d.textContent = t;
   document.body.appendChild(d); setTimeout(() => d.remove(), 2200);
 }
 const go = h => { location.hash = h; };
 function charOf(w, id){ return w.characters.find(c => c.id === id); }
+/* タグ＝人物 または 世界観の項目 */
+function tagOf(w, id){
+  const c = charOf(w, id); if (c) return { id, name:c.name, color:c.color, sq:false };
+  const x = w.worldItems.find(x => x.id === id); if (x) return { id, name:x.title, color:x.color, sq:true };
+  return null;
+}
+const dotHtml = t => `<span class="dot ${t.sq ? 'sq' : ''}" style="background:${t.color}"></span>`;
 function tagsHtml(w, ids){
-  return (ids || []).map(id => charOf(w, id)).filter(Boolean)
-    .map(c => `<span class="tag"><span class="dot" style="background:${c.color}"></span>${esc(c.name)}</span>`).join('');
+  return (ids || []).map(id => tagOf(w, id)).filter(Boolean).map(t => `<span class="tag">${dotHtml(t)}${esc(t.name)}</span>`).join('');
 }
 function autoTitle(list, unit){ return `第${list.length + 1}${unit}`; }
+function epLabel(w, epId){ const x = epId && findEp(w, epId); return x ? `${x.c.title} ${x.e.title}` : ''; }
+
+/* 部品「2回押し削除」：1回目で赤い「削除」に変わり、3秒以内にもう1回押すと削除 */
+const delBtn = attr => `<button class="act del" ${attr} aria-label="削除">${I.x}</button>`;
+function twoTap(btn, fn){
+  btn.onclick = e => {
+    e.stopPropagation();
+    if (btn.classList.contains('armed')){ clearTimeout(btn._t); fn(); toast('削除しました（↶で戻せます）'); return; }
+    document.querySelectorAll('.del.armed').forEach(b => { b.classList.remove('armed'); b.innerHTML = I.x; });
+    btn.classList.add('armed'); btn.textContent = '削除';
+    btn._t = setTimeout(() => { btn.classList.remove('armed'); btn.innerHTML = I.x; }, 3000);
+  };
+}
 
 /* 部品「下メニュー」 */
 function sheet(title, items, note){
@@ -230,8 +318,9 @@ function sheet(title, items, note){
   bg.innerHTML = `<div class="sheet">${title ? `<h3>${esc(title)}</h3>` : ''}${note ? `<div class="note">${esc(note)}</div>` : ''}</div>`;
   const s = bg.firstChild;
   items.filter(Boolean).forEach(it => {
+    if (it.head){ const h = document.createElement('h4'); h.textContent = it.head; s.appendChild(h); return; }
     const b = document.createElement('button'); b.textContent = it.label;
-    if (it.danger) b.className = 'danger';
+    if (it.on) b.className = 'on';
     b.onclick = () => { bg.remove(); it.fn(); };
     s.appendChild(b);
   });
@@ -241,16 +330,19 @@ function sheet(title, items, note){
   document.body.appendChild(bg);
 }
 
-/* 部品「人物タグ選び」：チェックを付けたり外したり */
+/* 部品「タグ選び」：人物と世界観の項目から、チェックを付けたり外したり */
 function tagSheet(w, target, onChange){
   const bg = document.createElement('div'); bg.className = 'sheet-bg';
+  const opt = t => `<button data-id="${t.id}"><span class="chk ${target.tags.includes(t.id) ? 'on' : ''}">✓</span>${dotHtml(t)}${esc(t.name)}</button>`;
   const draw = () => {
-    bg.innerHTML = `<div class="sheet"><h3>人物タグ</h3>
-      ${w.characters.length ? '' : '<div class="note">まだ人物がいません。作品の「人物」タブで追加すると、ここで選べます。</div>'}
-      ${w.characters.map(c => `<button data-id="${c.id}"><span class="chk ${target.tags.includes(c.id) ? 'on' : ''}">✓</span>
-        <span class="dot" style="background:${c.color}"></span>${esc(c.name)}</button>`).join('')}
+    const chars = w.characters.map(c => tagOf(w, c.id)), worlds = w.worldItems.map(x => tagOf(w, x.id));
+    bg.innerHTML = `<div class="sheet"><h3>タグ</h3>
+      ${chars.length || worlds.length ? '' : '<div class="note">まだタグがありません。「人物」「世界観」タブで追加すると、ここで選べます。</div>'}
+      ${chars.length ? `<h4>人物</h4>${chars.map(opt).join('')}` : ''}
+      ${worlds.length ? `<h4>世界観</h4>${worlds.map(opt).join('')}` : ''}
       <button id="done" style="justify-content:center;color:var(--accent);font-weight:600">完了</button></div>`;
     bg.querySelectorAll('[data-id]').forEach(b => b.onclick = () => {
+      rec();
       const id = b.dataset.id, i = target.tags.indexOf(id);
       if (i >= 0) target.tags.splice(i, 1); else target.tags.push(id);
       onChange(); draw();
@@ -262,24 +354,32 @@ function tagSheet(w, target, onChange){
   document.body.appendChild(bg);
 }
 
-/* 部品「人物で絞り込み」 */
-const filters = {};   // 作品ごとに、選んでいる人物
+/* 部品「タグで絞り込み」：複数選ぶと「全部に当てはまる」ものだけ出す */
+const filters = {};   // 作品ごとに、選んでいるタグ
+function selTags(w){ return (filters[w.id] = (filters[w.id] || []).filter(id => tagOf(w, id))); }
+const matchAll = (tags, sel) => sel.every(id => tags.includes(id));
 function chipBar(w){
-  if (!w.characters.length) return '';
-  const sel = filters[w.id];
-  return `<div class="chips">${w.characters.map(c =>
-    `<button class="chip ${sel === c.id ? 'on' : ''}" data-chip="${c.id}"><span class="dot" style="background:${c.color}"></span>${esc(c.name)}</button>`).join('')}</div>`;
+  const all = [...w.characters.map(c => tagOf(w, c.id)), ...w.worldItems.map(x => tagOf(w, x.id))];
+  if (!all.length) return '';
+  const sel = selTags(w);
+  return `<div class="chips">${sel.length ? '<button class="chip clear" data-chipclear>解除</button>' : ''}${all.map(t =>
+    `<button class="chip ${sel.includes(t.id) ? 'on' : ''}" data-chip="${t.id}">${dotHtml(t)}${esc(t.name)}</button>`).join('')}</div>`;
 }
 function bindChips(w, rerender){
+  const bar = $app.querySelector('.chips'), sx = bar ? bar.scrollLeft : 0;
   $app.querySelectorAll('[data-chip]').forEach(b => b.onclick = () => {
-    filters[w.id] = filters[w.id] === b.dataset.chip ? null : b.dataset.chip; rerender();
+    const sel = selTags(w), id = b.dataset.chip, i = sel.indexOf(id);
+    if (i >= 0) sel.splice(i, 1); else sel.push(id);
+    rerender(); const nb = $app.querySelector('.chips'); if (nb) nb.scrollLeft = sx;
   });
+  const cl = $app.querySelector('[data-chipclear]'); if (cl) cl.onclick = () => { filters[w.id] = []; rerender(); };
 }
+function selNames(w){ return selTags(w).map(id => `「${esc(tagOf(w, id).name)}」`).join('と'); }
 
 /* ===== 部品「長押し並べ替え」 =====
    行を長押し（約0.4秒）→ 浮き上がる → 指を動かして好きな位置で離す。
    handle を指定すると、その印（≡）に触れた瞬間からつかめる。 */
-let suppressClickUntil = 0;
+let suppressClickUntil = 0, dragging = false;
 document.addEventListener('click', e => { if (Date.now() < suppressClickUntil){ e.stopPropagation(); e.preventDefault(); } }, true);
 document.addEventListener('contextmenu', e => { if (e.target.closest('.row,.grip')) e.preventDefault(); });
 function sortable(root, { item, box, handle, onEnd }){
@@ -291,7 +391,7 @@ function sortable(root, { item, box, handle, onEnd }){
     document.body.appendChild(ghost);
     el.classList.add('dragging'); document.body.classList.add('nosel');
     if (navigator.vibrate) navigator.vibrate(25);
-    drag = { el, ghost, off: y - r.top }; lastY = y;
+    drag = { el, ghost, off: y - r.top }; lastY = y; dragging = true;
     const loop = () => {
       if (!drag) return;
       if (lastY < 90) window.scrollBy(0, -12); else if (lastY > innerHeight - 90) window.scrollBy(0, 12);
@@ -316,10 +416,11 @@ function sortable(root, { item, box, handle, onEnd }){
   const finish = () => {
     cancelAnimationFrame(raf);
     drag.ghost.remove(); drag.el.classList.remove('dragging'); document.body.classList.remove('nosel');
-    drag = null; suppressClickUntil = Date.now() + 350; onEnd();
+    drag = null; suppressClickUntil = Date.now() + 350; rec(); onEnd();
+    setTimeout(() => { dragging = false; }, 50);
   };
   const down = (e, x, y) => {
-    if (e.target.closest('input,textarea,.more')) return false;
+    if (e.target.closest('input,textarea,.act')) return false;
     const el = e.target.closest(item); if (!el || !root.contains(el)) return false;
     if (handle){
       if (!e.target.closest(handle)) return false;
@@ -347,7 +448,7 @@ function sortable(root, { item, box, handle, onEnd }){
   });
 }
 // 画面に並んだ順番どおりに、元のリストを並べ直す
-function reorderBy(list, ids){ const m = new Map(list.map(x => [x.id, x])); return ids.map(id => m.get(id)).filter(Boolean); }
+function reorderBy(list, ids){ const m = new Map(list.map(x => [x.id, x])); const out = ids.map(id => m.get(id)).filter(Boolean); list.forEach(x => { if (!out.includes(x)) out.push(x); }); return out; }
 const idsIn = (el, sel) => [...el.querySelectorAll(sel)].map(x => x.dataset.id);
 
 /* ===== 部品「バックアップ」 ===== */
@@ -365,7 +466,7 @@ function download(name, text, type){
 function exportBackup(){
   data.lastBackupAt = now();
   download(`小説工房バックアップ_${stamp()}.json`, JSON.stringify(data, null, 1), 'application/json');
-  save(); toast('バックアップを書き出しました（ダウンロードフォルダ）'); route();
+  save(); toast('バックアップを書き出しました（ダウンロードフォルダ）'); route(true);
 }
 function importBackup(){ document.getElementById('importFile').click(); }
 document.getElementById('importFile').addEventListener('change', async e => {
@@ -379,16 +480,16 @@ document.getElementById('importFile').addEventListener('change', async e => {
   const n = incoming.works.length;
   if (!confirm(`バックアップ（作品 ${n} 件）を読み込みます。\n今アプリにあるデータは、このバックアップの内容に置き換わります。\n\n（念のため、置き換える前のデータはアプリ内に1つだけ控えておきます）\n\n読み込みますか？`)) return;
   await dbSet('beforeImport', { savedAt: now(), data });
-  data = migrate(incoming); await save();
-  toast('読み込みました'); go('#/'); route();
+  rec(); data = migrate(incoming); await save();
+  toast('読み込みました'); go('#/'); route(true);
 });
 async function restoreBeforeImport(){
   const b = await dbGet('beforeImport');
   if (!b){ alert('控えはありません。'); return; }
   if (!confirm(`${fmtDate(b.savedAt)} に控えたデータ（読み込み前の状態）に戻しますか？\n今のデータは置き換わります。`)) return;
-  const cur = data; data = migrate(b.data);
+  const cur = data; rec(); data = migrate(b.data);
   await dbSet('beforeImport', { savedAt: now(), data: cur });
-  await save(); toast('読み込み前の状態に戻しました'); route();
+  await save(); toast('読み込み前の状態に戻しました'); route(true);
 }
 function exportText(w){
   let t = `${w.title}\n\n`;
@@ -416,7 +517,7 @@ function backupBar(){
 function renderHome(){
   const ws = [...data.works].sort((a, b) => b.updatedAt - a.updatedAt);
   $app.innerHTML = `
-    <div class="top"><header class="bar"><h1>小説工房</h1><button class="ibtn" id="menu" aria-label="メニュー">⋮</button></header></div>
+    <div class="top"><header class="bar"><h1>小説工房</h1>${undoBtns()}<button class="ibtn" id="menu" aria-label="メニュー">${I.menu}</button></header></div>
     <main>
       ${backupBar()}
       ${ws.length ? `<div class="sec-title">作品</div><div class="card">${ws.map(w => `
@@ -425,15 +526,20 @@ function renderHome(){
             <div class="t">${esc(w.title)}</div>
             <div class="m">${fmtN(workChars(w))} 字 ・ ${w.chapters.length} 章 ・ 更新 ${fmtDate(w.updatedAt)}</div>
           </button>
-          <button class="more" data-more="${w.id}" aria-label="操作">⋯</button>
+          <button class="act" data-txt="${w.id}" aria-label="テキストで書き出す">${I.dl}</button>
+          ${delBtn(`data-delw="${w.id}"`)}
         </div>`).join('')}</div>`
       : `<div class="empty">まだ作品がありません。<br>右下の ＋ から作品を作りましょう。</div>`}
     </main>
     <button class="fab" id="addWork" aria-label="作品を追加">＋</button>`;
+  bindUndo();
   $app.querySelectorAll('[data-open]').forEach(b => b.onclick = () => go(`#/w/${b.dataset.open}`));
-  $app.querySelectorAll('[data-more]').forEach(b => b.onclick = () => workMenu(findWork(b.dataset.more)));
+  $app.querySelectorAll('[data-txt]').forEach(b => b.onclick = () => exportText(findWork(b.dataset.txt)));
+  $app.querySelectorAll('[data-delw]').forEach(b => twoTap(b, () => {
+    rec(); data.works = data.works.filter(x => x.id !== b.dataset.delw); save(); renderHome();
+  }));
   document.getElementById('addWork').onclick = () => {
-    const w = newWork(); data.works.push(w); save(); go(`#/w/${w.id}`);
+    rec(); const w = newWork(); data.works.push(w); save(); go(`#/w/${w.id}`);
   };
   document.getElementById('menu').onclick = () => sheet('メニュー', [
     { label:'バックアップを書き出す', fn:exportBackup },
@@ -442,17 +548,8 @@ function renderHome(){
   ], 'バックアップは全作品を1つのファイルにまとめます。こまめに書き出して、Googleドライブなどにも置いておくと安心です。');
   const bk = document.getElementById('bkNow'); if (bk) bk.onclick = exportBackup;
 }
-function workMenu(w){
-  sheet(w.title, [
-    { label:'テキストで書き出す（.txt）', fn:() => exportText(w) },
-    { label:'作品を削除する', danger:true, fn:() => {
-      if (!confirm(`「${w.title}」を削除します。\n本文・人物・ネタもすべて消え、元に戻せません。\n（心配なら先にバックアップを書き出してください）\n\n削除しますか？`)) return;
-      data.works = data.works.filter(x => x !== w); save(); route();
-    } },
-  ]);
-}
 
-/* ===== 画面「作品」（タブ：本文・あらすじ・人物・世界観・ネタ帳） ===== */
+/* ===== 画面「作品」（タブ：本文・あらすじ・人物・世界観・ネタ帳。左右スワイプで切り替え） ===== */
 const TABS = [['body','本文'],['synopsis','あらすじ'],['chars','人物'],['world','世界観'],['ideas','ネタ帳']];
 function renderWork(wid, tab){
   const w = findWork(wid); if (!w){ go('#/'); return; }
@@ -460,30 +557,49 @@ function renderWork(wid, tab){
   $app.innerHTML = `
     <div class="top">
       <header class="bar">
-        <button class="ibtn" id="back" aria-label="戻る">←</button>
+        <button class="ibtn" id="back" aria-label="戻る">${I.back}</button>
         <input class="ttl" id="wttl" value="${esc(w.title)}" placeholder="作品のタイトル">
         <span class="status" id="status"></span>
-        <button class="ibtn" id="wmenu" aria-label="作品の操作">⋮</button>
+        ${undoBtns()}
       </header>
       <nav class="tabs">${TABS.map(([k, l]) => `<button data-tab="${k}" class="${k === tab ? 'on' : ''}">${l}</button>`).join('')}</nav>
     </div>
     <main id="pane"></main>`;
+  bindUndo();
   document.getElementById('back').onclick = () => go('#/');
-  document.getElementById('wmenu').onclick = () => workMenu(w);
   const ttl = document.getElementById('wttl');
-  ttl.addEventListener('input', () => { w.title = ttl.value.trim() || '無題の作品'; touch(w); saveSoon(); });
-  $app.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => go(`#/w/${wid}/${b.dataset.tab}`));
-  ({ body:paneBody, synopsis:paneSynopsis, chars:paneChars, world:paneWorld, ideas:paneIdeas })[tab](w, document.getElementById('pane'));
+  ttl.addEventListener('input', () => { rec('wt:' + w.id); w.title = ttl.value.trim() || '無題の作品'; touch(w); saveSoon(); });
+  $app.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => location.replace(`#/w/${wid}/${b.dataset.tab}`));
+  const on = $app.querySelector('nav.tabs .on'); if (on) on.scrollIntoView({ inline:'center', block:'nearest' });
+  const pane = document.getElementById('pane');
+  ({ body:paneBody, synopsis:paneSynopsis, chars:paneChars, world:paneWorld, ideas:paneIdeas })[tab](w, pane);
+  swipeTabs(pane, wid, tab);
+}
+/* 部品「スワイプでタブ移動」 */
+function swipeTabs(el, wid, tab){
+  let sx = 0, sy = 0, st = 0, ok = false;
+  el.addEventListener('touchstart', e => {
+    const t = e.touches[0]; sx = t.clientX; sy = t.clientY; st = now();
+    ok = !e.target.closest('.chips,.seg') && e.touches.length === 1;
+  }, { passive:true });
+  el.addEventListener('touchend', e => {
+    if (!ok || dragging) return;
+    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) * 0.6 || now() - st > 700) return;
+    const i = TABS.findIndex(x => x[0] === tab), j = i + (dx < 0 ? 1 : -1);
+    if (j < 0 || j >= TABS.length) return;
+    location.replace(`#/w/${wid}/${TABS[j][0]}`);
+  }, { passive:true });
 }
 
 /* タブ「本文」：章と話 */
 function paneBody(w, pane){
-  const sel = filters[w.id], selC = sel && charOf(w, sel);
-  if (selC){
-    const hits = allEpisodes(w).filter(x => x.e.tags.includes(sel));
+  const sel = selTags(w);
+  if (sel.length){
+    const hits = allEpisodes(w).filter(x => matchAll(x.e.tags, sel));
     pane.innerHTML = `${chipBar(w)}
-      <div class="hint"><span>「${esc(selC.name)}」が出る話：${hits.length} 話</span></div>
-      <div class="card">${hits.map(({ c, e }) => epRow(w, e, c.title)).join('') || '<div class="empty">タグの付いた話はまだありません</div>'}</div>`;
+      <div class="hint"><span>${selNames(w)}が出る話：${hits.length} 話</span></div>
+      <div class="card">${hits.map(({ c, e }) => epRow(w, e, c.title)).join('') || '<div class="empty">当てはまる話はありません</div>'}</div>`;
     bindChips(w, () => paneBody(w, pane)); bindEpRows(w, pane, () => paneBody(w, pane));
     return;
   }
@@ -495,294 +611,337 @@ function paneBody(w, pane){
           <span class="grip" aria-label="章をつかんで移動">≡</span>
           <input data-ctitle="${c.id}" value="${esc(c.title)}" aria-label="章の名前">
           <span class="n">${c.episodes.length} 話</span>
-          <button class="more" data-cmore="${c.id}" aria-label="章の操作">⋯</button>
+          ${delBtn(`data-delc="${c.id}"`)}
         </div>
         <div class="sortbox eps" data-cid="${c.id}">${c.episodes.map(e => epRow(w, e)).join('')}</div>
         <button class="add" data-addep="${c.id}">＋ 話を追加</button>
       </div>`).join('')}</div>
     <button class="wide-btn" id="addChap">＋ 章を追加</button>`;
-  bindChips(w, () => paneBody(w, pane));
-  bindEpRows(w, pane, () => paneBody(w, pane));
+  const rerender = () => paneBody(w, pane);
+  bindChips(w, rerender);
+  bindEpRows(w, pane, rerender);
   document.getElementById('addChap').onclick = () => {
-    w.chapters.push(newChapter(autoTitle(w.chapters, '章'))); touch(w); save(); paneBody(w, pane);
+    rec(); w.chapters.push(newChapter(autoTitle(w.chapters, '章'))); touch(w); save(); rerender();
   };
   pane.querySelectorAll('[data-ctitle]').forEach(inp => inp.addEventListener('input', () => {
+    rec('ct:' + inp.dataset.ctitle);
     const c = w.chapters.find(x => x.id === inp.dataset.ctitle); c.title = inp.value || '無題の章'; touch(w); saveSoon();
   }));
   pane.querySelectorAll('[data-addep]').forEach(b => b.onclick = () => {
+    rec();
     const c = w.chapters.find(x => x.id === b.dataset.addep);
     const e = newEpisode(autoTitle(c.episodes, '話')); c.episodes.push(e); touch(w); save();
     go(`#/e/${w.id}/${e.id}`);
   });
-  pane.querySelectorAll('[data-cmore]').forEach(b => b.onclick = () => {
-    const c = w.chapters.find(x => x.id === b.dataset.cmore);
-    sheet(c.title, [
-      { label:'章を削除する', danger:true, fn:() => {
-        if (c.episodes.length){ alert('話が入っている章は削除できません。\n先に中の話を削除するか、長押しで別の章へ移してください。'); return; }
-        if (!confirm(`「${c.title}」を削除しますか？`)) return;
-        w.chapters = w.chapters.filter(x => x !== c); touch(w); save(); paneBody(w, pane);
-      } },
-    ]);
-  });
-  // 話の並べ替え（章をまたいでもOK）
+  pane.querySelectorAll('[data-delc]').forEach(b => twoTap(b, () => {
+    rec(); w.chapters = w.chapters.filter(x => x.id !== b.dataset.delc); touch(w); save(); rerender();
+  }));
   const chaps = document.getElementById('chaps');
+  // 話の並べ替え（章をまたいでもOK）
   sortable(chaps, { item:'.row', box:'.eps', onEnd:() => {
     const all = new Map(allEpisodes(w).map(x => [x.e.id, x.e]));
     chaps.querySelectorAll('.eps').forEach(bx => {
       const c = w.chapters.find(x => x.id === bx.dataset.cid);
       c.episodes = idsIn(bx, ':scope > .row').map(id => all.get(id)).filter(Boolean);
     });
-    touch(w); save(); paneBody(w, pane);
+    touch(w); save(); rerender();
   }});
   // 章の並べ替え（≡ をつかむ）
   sortable(chaps, { item:'.chap', box:'#chaps', handle:'.grip', onEnd:() => {
-    w.chapters = reorderBy(w.chapters, idsIn(chaps, ':scope > .chap')); touch(w); save(); paneBody(w, pane);
+    w.chapters = reorderBy(w.chapters, idsIn(chaps, ':scope > .chap')); touch(w); save(); rerender();
   }});
 }
 function epRow(w, e, chapName){
+  const n = w.ideas.filter(i => i.epId === e.id).length;
   return `<div class="row" data-id="${e.id}">
     <button class="main" data-ep="${e.id}">
       <div class="t">${esc(e.title)}</div>
-      <div class="m">${chapName ? `<span>${esc(chapName)}</span>` : ''}<span>${fmtN(count(e.body))} 字 ・ ${fmtDate(e.updatedAt)}</span>${tagsHtml(w, e.tags)}</div>
+      <div class="m">${chapName ? `<span>${esc(chapName)}</span>` : ''}<span>${fmtN(count(e.body))} 字 ・ ${fmtDate(e.updatedAt)}</span>${n ? `<span>💡${n}</span>` : ''}${tagsHtml(w, e.tags)}</div>
     </button>
-    <button class="more" data-emore="${e.id}" aria-label="話の操作">⋯</button>
+    <button class="act" data-etag="${e.id}" aria-label="タグを付ける">${I.tag}</button>
+    ${delBtn(`data-dele="${e.id}"`)}
   </div>`;
 }
 function bindEpRows(w, pane, rerender){
   pane.querySelectorAll('[data-ep]').forEach(b => b.onclick = () => go(`#/e/${w.id}/${b.dataset.ep}`));
-  pane.querySelectorAll('[data-emore]').forEach(b => b.onclick = () => episodeMenu(w, b.dataset.emore, rerender));
-}
-function episodeMenu(w, eid, after){
-  const x = allEpisodes(w).find(x => x.e.id === eid); if (!x) return;
-  sheet(x.e.title, [
-    { label:'人物タグを付ける', fn:() => tagSheet(w, x.e, () => { touch(w); save(); after(); }) },
-    { label:'話を削除する', danger:true, fn:() => {
-      if (!confirm(`「${x.e.title}」を削除します。\n本文も消え、元に戻せません。\n\n削除しますか？`)) return;
-      x.c.episodes = x.c.episodes.filter(e => e !== x.e); touch(w); save();
-      if (location.hash.startsWith('#/e/')) go(`#/w/${w.id}/body`); else after();
-    } },
-  ]);
+  pane.querySelectorAll('[data-etag]').forEach(b => b.onclick = () => {
+    const x = findEp(w, b.dataset.etag); tagSheet(w, x.e, () => { touch(w); save(); rerender(); });
+  });
+  pane.querySelectorAll('[data-dele]').forEach(b => twoTap(b, () => {
+    const x = findEp(w, b.dataset.dele); rec(); x.c.episodes = x.c.episodes.filter(e => e !== x.e); touch(w); save(); rerender();
+  }));
 }
 
 /* タブ「あらすじ」 */
 function paneSynopsis(w, pane){
   pane.style.padding = '0'; pane.style.display = 'flex';
-  pane.innerHTML = `<textarea class="body" id="syn" placeholder="物語全体のあらすじ、テーマ、結末の予定などを自由に書けます" style="min-height:calc(100dvh - 110px)">${esc(w.synopsis)}</textarea>`;
+  pane.innerHTML = `<textarea class="body" id="syn" placeholder="物語全体のあらすじ、テーマ、結末の予定などを自由に書けます" style="min-height:calc(100dvh - 120px)">${esc(w.synopsis)}</textarea>`;
   const t = document.getElementById('syn');
-  t.addEventListener('input', () => { w.synopsis = t.value; touch(w); saveSoon(); });
+  t.addEventListener('input', () => { rec('syn:' + w.id); w.synopsis = t.value; touch(w); saveSoon(); });
 }
+
+/* 登場数を数える小道具 */
+const epCount = (w, id) => allEpisodes(w).filter(x => x.e.tags.includes(id)).length;
+const ideaCount = (w, id) => w.ideas.filter(i => i.tags.includes(id)).length;
 
 /* タブ「人物」 */
 function paneChars(w, pane){
-  const epCount = id => allEpisodes(w).filter(x => x.e.tags.includes(id)).length;
-  const ideaCount = id => w.ideas.filter(i => i.tags.includes(id)).length;
   pane.innerHTML = w.characters.length ? `
     <div class="hint"><span>${w.characters.length} 人</span><span>長押しで並べ替え</span></div>
     <div class="card"><div class="sortbox" id="clist">${w.characters.map(c => `
       <div class="row" data-id="${c.id}">
         <span class="avatar" style="background:${c.color}">${esc((c.name || '？')[0])}</span>
-        <button class="main" data-c="${c.id}">
+        <button class="main" data-c="${c.id}" style="padding-left:10px">
           <div class="t">${esc(c.name)}</div>
-          <div class="m">${c.role ? `<span>${esc(c.role)}</span>` : ''}<span>登場 ${epCount(c.id)} 話 ・ ネタ ${ideaCount(c.id)}</span></div>
+          <div class="m">${c.role ? `<span>${esc(c.role)}</span>` : ''}<span>登場 ${epCount(w, c.id)} 話 ・ ネタ ${ideaCount(w, c.id)}</span></div>
         </button>
+        ${delBtn(`data-delch="${c.id}"`)}
       </div>`).join('')}</div></div>`
     : `<div class="empty">登場人物を追加すると、<br>その人物を話やネタに「タグ」として付けられます。</div>`;
   pane.insertAdjacentHTML('beforeend', `<button class="fab" id="addChar" aria-label="人物を追加">＋</button>`);
   pane.querySelectorAll('[data-c]').forEach(b => b.onclick = () => go(`#/c/${w.id}/${b.dataset.c}`));
+  pane.querySelectorAll('[data-delch]').forEach(b => twoTap(b, () => { rec(); removeTag(w, b.dataset.delch); save(); paneChars(w, pane); }));
   document.getElementById('addChar').onclick = () => {
+    rec();
     const c = { id:uid(), name:'新しい人物', role:'', color:COLORS[w.characters.length % COLORS.length], body:'' };
     w.characters.push(c); touch(w); save(); go(`#/c/${w.id}/${c.id}?new`);
   };
   const cl = document.getElementById('clist');
   if (cl) sortable(cl, { item:'.row', box:'#clist', onEnd:() => { w.characters = reorderBy(w.characters, idsIn(cl, ':scope > .row')); touch(w); save(); paneChars(w, pane); } });
 }
+/* 人物や世界観の項目を消すとき、話やネタに付いたそのタグも外す */
+function removeTag(w, id){
+  w.characters = w.characters.filter(x => x.id !== id);
+  w.worldItems = w.worldItems.filter(x => x.id !== id);
+  allEpisodes(w).forEach(x => x.e.tags = x.e.tags.filter(t => t !== id));
+  w.ideas.forEach(i => i.tags = i.tags.filter(t => t !== id));
+  touch(w);
+}
 
-/* タブ「世界観」 */
+/* タブ「世界観」：項目＝タグ。分類で絞り込み、並び順を切り替え */
+const worldView = {};   // 作品ごとに { sort:'manual'|'cat'|'name', cat:null }
 function paneWorld(w, pane){
+  const v = worldView[w.id] = worldView[w.id] || { sort:'manual', cat:null };
+  const cats = [...new Set(w.worldItems.map(x => x.cat.trim()).filter(Boolean))];
+  if (v.cat && !cats.includes(v.cat)) v.cat = null;
+  let list = w.worldItems.filter(x => !v.cat || x.cat.trim() === v.cat);
+  if (v.sort === 'name') list = [...list].sort((a, b) => a.title.localeCompare(b.title, 'ja'));
+  if (v.sort === 'cat') list = [...list].sort((a, b) => (a.cat || '￿').localeCompare(b.cat || '￿', 'ja') || a.title.localeCompare(b.title, 'ja'));
+  const canSort = v.sort === 'manual' && !v.cat;
+  const row = x => `<div class="row" data-id="${x.id}">
+      <span class="avatar sq" style="background:${x.color}">${esc((x.title || '？')[0])}</span>
+      <button class="main" data-x="${x.id}" style="padding-left:10px">
+        <div class="t">${esc(x.title)}</div>
+        <div class="m">${x.cat ? `<span>${esc(x.cat)}</span>` : ''}<span>登場 ${epCount(w, x.id)} 話 ・ ネタ ${ideaCount(w, x.id)}</span></div>
+      </button>
+      ${delBtn(`data-delx="${x.id}"`)}
+    </div>`;
+  let listHtml = '';
+  if (v.sort === 'cat'){
+    let cur = null;
+    listHtml = list.map(x => { const c = x.cat.trim() || '分類なし'; const h = c !== cur ? `<div class="grp">${esc(c)}</div>` : ''; cur = c; return h + row(x); }).join('');
+  } else listHtml = list.map(row).join('');
   pane.innerHTML = w.worldItems.length ? `
-    <div class="hint"><span>${w.worldItems.length} 項目</span><span>長押しで並べ替え</span></div>
-    <div class="card"><div class="sortbox" id="xlist">${w.worldItems.map(x => `
-      <div class="row" data-id="${x.id}">
-        <button class="main" data-x="${x.id}">
-          <div class="t">${esc(x.title)}</div>
-          ${x.body ? `<div class="pv">${esc(x.body.trim().slice(0, 120))}</div>` : ''}
-        </button>
-      </div>`).join('')}</div></div>`
-    : `<div class="empty">地名・組織・魔法のルール・年表など、<br>設定を項目ごとにまとめておけます。</div>`;
+    ${cats.length ? `<div class="chips"><button class="chip ${!v.cat ? 'on' : ''}" data-cat="">すべて</button>${cats.map(c => `<button class="chip ${v.cat === c ? 'on' : ''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('')}</div>` : ''}
+    <div class="hint"><span>${list.length} 項目</span>
+      <span class="seg">${[['manual','手動'],['cat','分類順'],['name','名前順']].map(([k, l]) => `<button data-sort="${k}" class="${v.sort === k ? 'on' : ''}">${l}</button>`).join('')}</span></div>
+    <div class="card"><div class="sortbox" id="xlist">${listHtml}</div></div>
+    ${canSort ? '<div class="hint"><span></span><span>長押しで並べ替え</span></div>' : ''}`
+    : `<div class="empty">地名・組織・魔法のルールなど、<br>設定を項目ごとにまとめておけます。<br>項目は話やネタに「タグ」として付けられます。</div>`;
   pane.insertAdjacentHTML('beforeend', `<button class="fab" id="addX" aria-label="項目を追加">＋</button>`);
   pane.querySelectorAll('[data-x]').forEach(b => b.onclick = () => go(`#/x/${w.id}/${b.dataset.x}`));
+  pane.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => { v.cat = b.dataset.cat || null; paneWorld(w, pane); });
+  pane.querySelectorAll('[data-sort]').forEach(b => b.onclick = () => { v.sort = b.dataset.sort; paneWorld(w, pane); });
+  pane.querySelectorAll('[data-delx]').forEach(b => twoTap(b, () => { rec(); removeTag(w, b.dataset.delx); save(); paneWorld(w, pane); }));
   document.getElementById('addX').onclick = () => {
-    const x = { id:uid(), title:'新しい項目', body:'' }; w.worldItems.push(x); touch(w); save(); go(`#/x/${w.id}/${x.id}?new`);
+    rec();
+    const x = { id:uid(), title:'新しい項目', cat:v.cat || '', color:COLORS[(w.worldItems.length + 4) % COLORS.length], body:'' };
+    w.worldItems.push(x); touch(w); save(); go(`#/x/${w.id}/${x.id}?new`);
   };
   const xl = document.getElementById('xlist');
-  if (xl) sortable(xl, { item:'.row', box:'#xlist', onEnd:() => { w.worldItems = reorderBy(w.worldItems, idsIn(xl, ':scope > .row')); touch(w); save(); paneWorld(w, pane); } });
+  if (xl && canSort) sortable(xl, { item:'.row', box:'#xlist', onEnd:() => { w.worldItems = reorderBy(w.worldItems, idsIn(xl, ':scope > .row')); touch(w); save(); paneWorld(w, pane); } });
 }
 
 /* タブ「ネタ帳」 */
 let hideUsed = false;
 function paneIdeas(w, pane){
-  const sel = filters[w.id] && charOf(w, filters[w.id]) ? filters[w.id] : null;
-  let list = w.ideas;
-  if (sel) list = list.filter(i => i.tags.includes(sel));
+  const sel = selTags(w);
+  let list = w.ideas.filter(i => matchAll(i.tags, sel));
   if (hideUsed) list = list.filter(i => !i.used);
-  const canSort = !sel && !hideUsed;
+  const canSort = !sel.length && !hideUsed;
   pane.innerHTML = `
     <div class="quick"><textarea id="qtext" rows="2" placeholder="思いついたことをすぐメモ（例：終盤であの人物が裏切る）"></textarea><button id="qadd">追加</button></div>
     ${chipBar(w)}
-    <div class="hint"><span>${list.length} 件${sel ? `（「${esc(charOf(w, sel).name)}」のタグ）` : ''}</span>
-      <button id="hideUsed" style="color:var(--accent);font-size:12px">${hideUsed ? '使ったネタも表示' : '使ったネタを隠す'}</button></div>
+    <div class="hint"><span>${list.length} 件${sel.length ? `（${selNames(w)}のタグ）` : ''}</span>
+      <button class="link" id="hideUsed">${hideUsed ? '使ったネタも表示' : '使ったネタを隠す'}</button></div>
     ${list.length ? `<div class="card"><div class="sortbox" id="ilist">${list.map(i => `
       <div class="row ${i.used ? 'used' : ''}" data-id="${i.id}">
         <button class="main" data-i="${i.id}">
           <div class="pv" style="color:var(--ink);font-size:15px;margin-top:0;-webkit-line-clamp:3">${esc(i.text.trim()) || '（空のメモ）'}</div>
-          <div class="m">${i.used ? '<span>✓ 使った</span>' : ''}<span>${fmtDate(i.createdAt)}</span>${tagsHtml(w, i.tags)}</div>
+          <div class="m">${i.used ? '<span>✓ 使った</span>' : ''}${epLabel(w, i.epId) ? `<span>📄 ${esc(epLabel(w, i.epId))}</span>` : ''}<span>${fmtDate(i.createdAt)}</span>${tagsHtml(w, i.tags)}</div>
         </button>
+        <button class="act" data-itag="${i.id}" aria-label="タグを付ける">${I.tag}</button>
+        ${delBtn(`data-deli="${i.id}"`)}
       </div>`).join('')}</div></div>`
-    : `<div class="empty">${sel || hideUsed ? '当てはまるネタはありません' : '「未来のこの話でこうしたい」などを、<br>ここにどんどん放り込めます。'}</div>`}`;
+    : `<div class="empty">${sel.length || hideUsed ? '当てはまるネタはありません' : '「未来のこの話でこうしたい」などを、<br>ここにどんどん放り込めます。'}</div>`}`;
+  const rerender = () => paneIdeas(w, pane);
   const q = document.getElementById('qtext');
   document.getElementById('qadd').onclick = () => {
     const t = q.value.trim(); if (!t) { q.focus(); return; }
-    w.ideas.unshift({ id:uid(), text:t, tags: sel ? [sel] : [], used:false, createdAt:now() });
-    touch(w); save(); paneIdeas(w, pane); toast('ネタを追加しました');
+    rec(); w.ideas.unshift({ id:uid(), text:t, tags:[...sel], used:false, epId:null, createdAt:now() });
+    touch(w); save(); rerender(); toast('ネタを追加しました');
   };
-  document.getElementById('hideUsed').onclick = () => { hideUsed = !hideUsed; paneIdeas(w, pane); };
-  bindChips(w, () => paneIdeas(w, pane));
+  document.getElementById('hideUsed').onclick = () => { hideUsed = !hideUsed; rerender(); };
+  bindChips(w, rerender);
   pane.querySelectorAll('[data-i]').forEach(b => b.onclick = () => go(`#/i/${w.id}/${b.dataset.i}`));
+  pane.querySelectorAll('[data-itag]').forEach(b => b.onclick = () => {
+    const it = w.ideas.find(i => i.id === b.dataset.itag); tagSheet(w, it, () => { touch(w); save(); rerender(); });
+  });
+  pane.querySelectorAll('[data-deli]').forEach(b => twoTap(b, () => { rec(); w.ideas = w.ideas.filter(i => i.id !== b.dataset.deli); touch(w); save(); rerender(); }));
   const il = document.getElementById('ilist');
-  if (il && canSort) sortable(il, { item:'.row', box:'#ilist', onEnd:() => { w.ideas = reorderBy(w.ideas, idsIn(il, ':scope > .row')); touch(w); save(); paneIdeas(w, pane); } });
+  if (il && canSort) sortable(il, { item:'.row', box:'#ilist', onEnd:() => { w.ideas = reorderBy(w.ideas, idsIn(il, ':scope > .row')); touch(w); save(); rerender(); } });
 }
 
-/* ===== 書く画面（話・人物・世界観・ネタ 共通の部品「書く画面」） ===== */
+/* ===== 部品「書く画面」（話・人物・世界観・ネタ 共通） ===== */
 function editorShell({ back, title, titlePh, fields, bodyText, bodyPh, foot }){
   $app.innerHTML = `
     <div class="editor">
       <header class="bar">
-        <button class="ibtn" id="back" aria-label="戻る">←</button>
+        <button class="ibtn" id="back" aria-label="戻る">${I.back}</button>
         ${title === null ? '<h1 style="font-size:16px">ネタ</h1>' : `<input class="ttl" id="ttl" value="${esc(title)}" placeholder="${titlePh}">`}
-        <span class="status" id="status">保存済み</span>
-        <button class="ibtn" id="emenu" aria-label="操作">⋮</button>
+        <span class="status" id="status">✓</span>
+        ${undoBtns()}
+        <button class="ibtn del" id="delBtn" aria-label="削除">${I.x}</button>
       </header>
       ${fields || ''}
       <textarea class="body" id="body" placeholder="${bodyPh}" spellcheck="false">${esc(bodyText)}</textarea>
       <div class="foot">${foot}</div>
     </div>`;
+  bindUndo();
   document.getElementById('back').onclick = () => { flushSave(); go(back); };
-  return { body:document.getElementById('body'), ttl:document.getElementById('ttl'), menu:document.getElementById('emenu') };
+  return { body:document.getElementById('body'), ttl:document.getElementById('ttl'), del:document.getElementById('delBtn') };
 }
 function selectAllIfNew(inp){ if (inp && location.hash.endsWith('?new')){ inp.focus(); inp.select(); history.replaceState(null, '', location.hash.replace('?new', '')); } }
+function keepCaret(body, pos){ if (pos != null){ try { body.focus(); body.setSelectionRange(pos, pos); } catch {} } }
 
 /* 画面「本文」 */
-function renderEpisode(wid, eid){
+function renderEpisode(wid, eid, caret){
   const w = findWork(wid); if (!w){ go('#/'); return; }
-  const x = allEpisodes(w).find(x => x.e.id === eid); if (!x){ go(`#/w/${wid}/body`); return; }
+  const x = findEp(w, eid); if (!x){ go(`#/w/${wid}/body`); return; }
   const ep = x.e;
-  const footHtml = () => `<button class="fbtn" id="tagBtn">👤 人物${ep.tags.length ? ` ${ep.tags.length}` : ''}</button>
+  const ideas = () => w.ideas.filter(i => i.epId === ep.id);
+  const footHtml = () => `<button class="fbtn" id="tagBtn">${I.tag}${ep.tags.length || ''}</button>
+    <button class="fbtn" id="ideaBtn">${I.idea}${ideas().length || ''}</button>
     <div class="grow">${tagsHtml(w, ep.tags)}</div><span id="cnt"></span>`;
-  const { body, ttl, menu } = editorShell({ back:`#/w/${wid}/body`, title:ep.title, titlePh:'話のタイトル',
+  const { body, ttl, del } = editorShell({ back:`#/w/${wid}/body`, title:ep.title, titlePh:'話のタイトル',
     bodyText:ep.body, bodyPh:'ここに本文を書きます', foot:footHtml() });
   const foot = document.querySelector('.foot');
   const upd = () => { const c = document.getElementById('cnt'); if (c) c.textContent = `${fmtN(count(body.value))} 字`; };
-  const bindFoot = () => { document.getElementById('tagBtn').onclick = () => tagSheet(w, ep, () => { touch(w); save(); foot.innerHTML = footHtml(); bindFoot(); upd(); }); };
+  const bindFoot = () => {
+    document.getElementById('tagBtn').onclick = () => tagSheet(w, ep, () => { touch(w); save(); foot.innerHTML = footHtml(); bindFoot(); upd(); });
+    document.getElementById('ideaBtn').onclick = () => {
+      const list = ideas();
+      sheet(`この話に結びついたネタ（${list.length}）`, [
+        ...list.map(i => ({ label:(i.used ? '✓ ' : '') + i.text.trim().slice(0, 40), fn:() => go(`#/i/${wid}/${i.id}`) })),
+        { label:'＋ この話用のネタを新しく作る', fn:() => {
+          rec(); const it = { id:uid(), text:'', tags:[...ep.tags], used:false, epId:ep.id, createdAt:now() };
+          w.ideas.unshift(it); touch(w); save(); go(`#/i/${wid}/${it.id}`);
+        } },
+      ], list.length ? null : 'ネタ帳のネタを開いて「📄 話」からこの話を選ぶと、ここに並びます。');
+    };
+  };
   bindFoot(); upd();
-  body.addEventListener('input', () => { ep.body = body.value; ep.updatedAt = now(); touch(w); upd(); saveSoon(); });
-  ttl.addEventListener('input', () => { ep.title = ttl.value.trim() || '無題'; ep.updatedAt = now(); touch(w); saveSoon(); });
-  menu.onclick = () => episodeMenu(w, ep.id, () => { foot.innerHTML = footHtml(); bindFoot(); upd(); });
-  if (!ep.body) body.focus();
+  body.addEventListener('input', () => { rec('ep:' + ep.id); ep.body = body.value; ep.updatedAt = now(); touch(w); upd(); saveSoon(); });
+  ttl.addEventListener('input', () => { rec('et:' + ep.id); ep.title = ttl.value.trim() || '無題'; ep.updatedAt = now(); touch(w); saveSoon(); });
+  twoTap(del, () => { rec(); x.c.episodes = x.c.episodes.filter(e => e !== ep); touch(w); save(); go(`#/w/${wid}/body`); });
+  if (caret != null) keepCaret(body, caret); else if (!ep.body) body.focus();
 }
 
-/* 画面「人物」 */
-function renderCharacter(wid, cid){
+/* 画面「人物」と「世界観の項目」（ほぼ同じ形） */
+function renderTagItem(wid, id, kind){
   const w = findWork(wid); if (!w){ go('#/'); return; }
-  const c = charOf(w, cid); if (!c){ go(`#/w/${wid}/chars`); return; }
-  const eps = allEpisodes(w).filter(x => x.e.tags.includes(c.id));
-  const ideas = w.ideas.filter(i => i.tags.includes(c.id));
-  const { body, ttl, menu } = editorShell({ back:`#/w/${wid}/chars`, title:c.name, titlePh:'名前',
+  const isChar = kind === 'c';
+  const it = isChar ? charOf(w, id) : w.worldItems.find(x => x.id === id);
+  const backTab = isChar ? 'chars' : 'world';
+  if (!it){ go(`#/w/${wid}/${backTab}`); return; }
+  const eps = allEpisodes(w).filter(x => x.e.tags.includes(id));
+  const nIdeas = ideaCount(w, id);
+  const nameKey = isChar ? 'name' : 'title';
+  const { body, ttl, del } = editorShell({ back:`#/w/${wid}/${backTab}`, title:it[nameKey], titlePh:isChar ? '名前' : '項目名',
     fields:`<div class="fields">
-      <label>役割など<input id="role" value="${esc(c.role)}" placeholder="例：主人公／探索者／敵の幹部"></label>
-      <label>色<span class="swatches">${COLORS.map(k => `<button class="sw ${k === c.color ? 'on' : ''}" data-col="${k}" style="background:${k}" aria-label="色"></button>`).join('')}</span></label>
+      ${isChar ? `<label>役割など<input id="sub" value="${esc(it.role)}" placeholder="例：主人公／探索者／敵の幹部"></label>`
+               : `<label>分類<input id="sub" value="${esc(it.cat)}" placeholder="例：地名／組織／魔法／歴史" list="cats"></label>
+                  <datalist id="cats">${[...new Set(w.worldItems.map(x => x.cat).filter(Boolean))].map(c => `<option value="${esc(c)}">`).join('')}</datalist>`}
+      <label>色<span class="swatches">${COLORS.map(k => `<button class="sw ${k === it.color ? 'on' : ''}" data-col="${k}" style="background:${k};${isChar ? '' : 'border-radius:7px'}" aria-label="色"></button>`).join('')}</span></label>
     </div>`,
-    bodyText:c.body, bodyPh:'見た目、性格、口調、過去、ほかの人物との関係など、細かい設定を自由に',
-    foot:`<button class="fbtn" id="seeEps">登場する話 ${eps.length}</button><button class="fbtn" id="seeIdeas">ネタ ${ideas.length}</button>` });
+    bodyText:it.body, bodyPh:isChar ? '見た目、性格、口調、過去、ほかの人物との関係など、細かい設定を自由に' : '設定の中身を自由に',
+    foot:`<button class="fbtn" id="seeEps">${I.page}登場する話 ${eps.length}</button><button class="fbtn" id="seeIdeas">${I.idea}ネタ ${nIdeas}</button>` });
   selectAllIfNew(ttl);
-  body.addEventListener('input', () => { c.body = body.value; touch(w); saveSoon(); });
-  ttl.addEventListener('input', () => { c.name = ttl.value.trim() || '名前なし'; touch(w); saveSoon(); });
-  const role = document.getElementById('role');
-  role.addEventListener('input', () => { c.role = role.value; touch(w); saveSoon(); });
+  body.addEventListener('input', () => { rec('tb:' + id); it.body = body.value; touch(w); saveSoon(); });
+  ttl.addEventListener('input', () => { rec('tn:' + id); it[nameKey] = ttl.value.trim() || (isChar ? '名前なし' : '無題の項目'); touch(w); saveSoon(); });
+  const sub = document.getElementById('sub');
+  sub.addEventListener('input', () => { rec('ts:' + id); if (isChar) it.role = sub.value; else it.cat = sub.value; touch(w); saveSoon(); });
   document.querySelectorAll('[data-col]').forEach(b => b.onclick = () => {
-    c.color = b.dataset.col; touch(w); save();
+    rec(); it.color = b.dataset.col; touch(w); save();
     document.querySelectorAll('[data-col]').forEach(x => x.classList.toggle('on', x === b));
   });
   document.getElementById('seeEps').onclick = () => {
-    if (!eps.length){ toast('まだこの人物のタグが付いた話はありません'); return; }
-    sheet(`「${c.name}」が出る話`, eps.map(({ c:ch, e }) => ({ label:`${ch.title}　${e.title}`, fn:() => go(`#/e/${wid}/${e.id}`) })));
+    if (!eps.length){ toast('まだこのタグが付いた話はありません'); return; }
+    sheet(`「${it[nameKey]}」が出る話`, eps.map(({ c, e }) => ({ label:`${c.title}　${e.title}`, fn:() => go(`#/e/${wid}/${e.id}`) })));
   };
-  document.getElementById('seeIdeas').onclick = () => { filters[wid] = c.id; go(`#/w/${wid}/ideas`); };
-  menu.onclick = () => sheet(c.name, [
-    { label:'この人物で本文を絞り込む', fn:() => { filters[wid] = c.id; go(`#/w/${wid}/body`); } },
-    { label:'人物を削除する', danger:true, fn:() => {
-      if (!confirm(`「${c.name}」を削除します。\n設定メモは消え、話やネタに付いたこの人物のタグも外れます。元に戻せません。\n\n削除しますか？`)) return;
-      w.characters = w.characters.filter(x => x !== c);
-      allEpisodes(w).forEach(x => x.e.tags = x.e.tags.filter(t => t !== c.id));
-      w.ideas.forEach(i => i.tags = i.tags.filter(t => t !== c.id));
-      if (filters[wid] === c.id) filters[wid] = null;
-      touch(w); save(); go(`#/w/${wid}/chars`);
-    } },
-  ]);
-}
-
-/* 画面「世界観の項目」 */
-function renderWorldItem(wid, xid){
-  const w = findWork(wid); if (!w){ go('#/'); return; }
-  const x = w.worldItems.find(x => x.id === xid); if (!x){ go(`#/w/${wid}/world`); return; }
-  const { body, ttl, menu } = editorShell({ back:`#/w/${wid}/world`, title:x.title, titlePh:'項目名',
-    bodyText:x.body, bodyPh:'設定の中身を自由に', foot:'<span class="grow"></span><span id="cnt"></span>' });
-  selectAllIfNew(ttl);
-  const upd = () => document.getElementById('cnt').textContent = `${fmtN(count(body.value))} 字`; upd();
-  body.addEventListener('input', () => { x.body = body.value; touch(w); upd(); saveSoon(); });
-  ttl.addEventListener('input', () => { x.title = ttl.value.trim() || '無題の項目'; touch(w); saveSoon(); });
-  menu.onclick = () => sheet(x.title, [{ label:'項目を削除する', danger:true, fn:() => {
-    if (!confirm(`「${x.title}」を削除します。元に戻せません。\n\n削除しますか？`)) return;
-    w.worldItems = w.worldItems.filter(y => y !== x); touch(w); save(); go(`#/w/${wid}/world`);
-  } }]);
+  document.getElementById('seeIdeas').onclick = () => { filters[wid] = [id]; go(`#/w/${wid}/ideas`); };
+  twoTap(del, () => { rec(); removeTag(w, id); save(); go(`#/w/${wid}/${backTab}`); });
 }
 
 /* 画面「ネタ」 */
-function renderIdea(wid, iid){
+function renderIdea(wid, iid, caret){
   const w = findWork(wid); if (!w){ go('#/'); return; }
   const it = w.ideas.find(i => i.id === iid); if (!it){ go(`#/w/${wid}/ideas`); return; }
-  const footHtml = () => `<button class="fbtn" id="tagBtn">👤 人物${it.tags.length ? ` ${it.tags.length}` : ''}</button>
+  const footHtml = () => `<button class="fbtn" id="tagBtn">${I.tag}${it.tags.length || ''}</button>
+    <button class="fbtn" id="epBtn" style="max-width:40%;overflow:hidden;text-overflow:ellipsis">${I.page}${esc(epLabel(w, it.epId) || '話')}</button>
     <div class="grow">${tagsHtml(w, it.tags)}</div><button class="fbtn ${it.used ? 'on' : ''}" id="usedBtn">${it.used ? '✓ 使った' : '使った'}</button>`;
-  const { body, menu } = editorShell({ back:`#/w/${wid}/ideas`, title:null, bodyText:it.text, bodyPh:'ネタの中身', foot:footHtml() });
+  const { body, del } = editorShell({ back:`#/w/${wid}/ideas`, title:null, bodyText:it.text, bodyPh:'ネタの中身', foot:footHtml() });
   const foot = document.querySelector('.foot');
   const bindFoot = () => {
     document.getElementById('tagBtn').onclick = () => tagSheet(w, it, () => { touch(w); save(); foot.innerHTML = footHtml(); bindFoot(); });
-    document.getElementById('usedBtn').onclick = () => { it.used = !it.used; touch(w); save(); foot.innerHTML = footHtml(); bindFoot(); };
+    document.getElementById('usedBtn').onclick = () => { rec(); it.used = !it.used; touch(w); save(); foot.innerHTML = footHtml(); bindFoot(); };
+    document.getElementById('epBtn').onclick = () => {
+      const items = [];
+      if (it.epId && findEp(w, it.epId)) items.push({ label:'→ この話を開く', fn:() => go(`#/e/${wid}/${it.epId}`) }, { label:'結びつけを外す', fn:() => { rec(); it.epId = null; touch(w); save(); foot.innerHTML = footHtml(); bindFoot(); } });
+      w.chapters.forEach(c => {
+        items.push({ head:c.title });
+        c.episodes.forEach(e => items.push({ label:e.title, on:e.id === it.epId, fn:() => { rec(); it.epId = e.id; touch(w); save(); foot.innerHTML = footHtml(); bindFoot(); } }));
+      });
+      sheet('このネタを使う話', items);
+    };
   };
   bindFoot();
-  body.addEventListener('input', () => { it.text = body.value; touch(w); saveSoon(); });
-  menu.onclick = () => sheet('ネタ', [{ label:'ネタを削除する', danger:true, fn:() => {
-    if (!confirm('このネタを削除します。元に戻せません。\n\n削除しますか？')) return;
-    w.ideas = w.ideas.filter(y => y !== it); touch(w); save(); go(`#/w/${wid}/ideas`);
-  } }]);
+  body.addEventListener('input', () => { rec('id:' + it.id); it.text = body.value; touch(w); saveSoon(); });
+  twoTap(del, () => { rec(); w.ideas = w.ideas.filter(y => y !== it); touch(w); save(); go(`#/w/${wid}/ideas`); });
+  if (caret != null) keepCaret(body, caret); else if (!it.text) body.focus();
 }
 
 /* ===== 画面の切り替え（スマホの「戻る」でも戻れる） ===== */
-function route(){
+let lastHash = null;
+function route(keep){
   flushSave();
+  const ta = document.getElementById('body'), caret = keep && ta ? ta.selectionStart : null, sy = window.scrollY;
   document.querySelectorAll('.sheet-bg,.ghost').forEach(x => x.remove());
-  const p = location.hash.replace(/^#\/?/, '').replace(/\?.*$/, '').split('/');
-  if (p[0] === 'w' && p[1]) { renderWork(p[1], p[2]); window.scrollTo(0, 0); }
-  else if (p[0] === 'e' && p[2]) renderEpisode(p[1], p[2]);
-  else if (p[0] === 'c' && p[2]) renderCharacter(p[1], p[2]);
-  else if (p[0] === 'x' && p[2]) renderWorldItem(p[1], p[2]);
-  else if (p[0] === 'i' && p[2]) renderIdea(p[1], p[2]);
+  const h = location.hash.replace(/\?.*$/, ''), p = h.replace(/^#\/?/, '').split('/');
+  const same = h === lastHash; lastHash = h;
+  if (p[0] === 'w' && p[1]) renderWork(p[1], p[2]);
+  else if (p[0] === 'e' && p[2]) renderEpisode(p[1], p[2], caret);
+  else if (p[0] === 'c' && p[2]) renderTagItem(p[1], p[2], 'c');
+  else if (p[0] === 'x' && p[2]) renderTagItem(p[1], p[2], 'x');
+  else if (p[0] === 'i' && p[2]) renderIdea(p[1], p[2], caret);
   else renderHome();
+  window.scrollTo(0, same ? sy : 0);
 }
-window.addEventListener('hashchange', route);
+window.addEventListener('hashchange', () => route());
 
 (async () => {
   try { data = await dbGet('data'); } catch (e) { alert('データを読み込めませんでした：' + e); }
-  const wasOld = data && data.version !== 2;
+  const wasOld = data && data.version !== 3;
   data = migrate(data);
   if (wasOld) await save();
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
