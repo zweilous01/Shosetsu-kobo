@@ -192,7 +192,7 @@ let data = null;
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const now = () => Date.now();
 const COLORS = ['#8a3b2e','#c0763a','#b59a2a','#4f7d3a','#2f7a78','#3a5f9a','#6b4a9a','#9a4a7a','#6b6b6b'];
-function emptyData(){ return { app:'shosetsu-kobo', version:3, works:[], lastBackupAt:null }; }
+function emptyData(){ return { app:'shosetsu-kobo', version:4, works:[], lastBackupAt:null }; }
 function newWork(){
   return { id:uid(), title:'無題の作品', createdAt:now(), updatedAt:now(),
     chapters:[ newChapter('第1章') ], synopsis:'', worldItems:[], ideas:[], characters:[] };
@@ -212,10 +212,10 @@ function migrate(d){
     if (typeof w.world === 'string'){ if (w.world.trim()) w.worldItems.push({ id:uid(), title:'世界観メモ', body:w.world }); delete w.world; }
     w.worldItems.forEach((x, k) => { x.cat = x.cat || ''; x.color = x.color || COLORS[(k + 4) % COLORS.length]; x.body = x.body || ''; });
     w.ideas = (w.ideas || []).map(i => typeof i === 'string' ? { id:uid(), text:i, tags:[], used:false, createdAt:now() } : i);
-    w.ideas.forEach(i => { i.tags = i.tags || []; i.epId = i.epId || null; });
+    w.ideas.forEach(i => { i.tags = i.tags || []; i.epIds = i.epIds || (i.epId ? [i.epId] : []); delete i.epId; });
     w.characters = w.characters || [];
   });
-  d.version = 3;
+  d.version = 4;
   return d;
 }
 
@@ -226,6 +226,7 @@ function flushSave(){ if (saveTimer){ clearTimeout(saveTimer); saveTimer = null;
 document.addEventListener('visibilitychange', () => { if (document.hidden) flushSave(); });
 window.addEventListener('pagehide', flushSave);
 
+let lastHash = null;
 /* ===== 部品「戻る・進む」 =====
    変更の直前の状態を控えておき、↶で1つ戻す・↷で1つ進める。
    文字入力は、続けて打っている間はまとめて1つ扱い（2.5秒手が止まったら区切り）。
@@ -298,7 +299,11 @@ function tagsHtml(w, ids){
   return (ids || []).map(id => tagOf(w, id)).filter(Boolean).map(t => `<span class="tag">${dotHtml(t)}${esc(t.name)}</span>`).join('');
 }
 function autoTitle(list, unit){ return `第${list.length + 1}${unit}`; }
-function epLabel(w, epId){ const x = epId && findEp(w, epId); return x ? `${x.c.title} ${x.e.title}` : ''; }
+function epLabel(w, ids){
+  const xs = (ids || []).map(id => findEp(w, id)).filter(Boolean);
+  if (!xs.length) return '';
+  return `${xs[0].c.title} ${xs[0].e.title}` + (xs.length > 1 ? ` 他${xs.length - 1}話` : '');
+}
 
 /* 部品「2回押し削除」：1回目で赤い「削除」に変わり、3秒以内にもう1回押すと削除 */
 const delBtn = attr => `<button class="act del" ${attr} aria-label="削除">${I.x}</button>`;
@@ -354,10 +359,32 @@ function tagSheet(w, target, onChange){
   document.body.appendChild(bg);
 }
 
-/* 部品「タグで絞り込み」：複数選ぶと「全部に当てはまる」ものだけ出す */
+/* 部品「話選び」：ネタを使う話にチェック（いくつでも）。チェック済みの話はすぐ開ける */
+function epSheet(w, it, onChange){
+  const bg = document.createElement('div'); bg.className = 'sheet-bg';
+  const draw = () => {
+    const linked = it.epIds.map(id => findEp(w, id)).filter(Boolean);
+    bg.innerHTML = `<div class="sheet"><h3>このネタを使う話（いくつでも選べます）</h3>
+      ${linked.length ? `<h4>開く</h4>${linked.map(({ c, e }) => `<button data-open="${e.id}">→ ${esc(c.title)}　${esc(e.title)}</button>`).join('')}` : ''}
+      ${w.chapters.map(c => `<h4>${esc(c.title)}</h4>${c.episodes.map(e => `<button data-id="${e.id}"><span class="chk ${it.epIds.includes(e.id) ? 'on' : ''}">✓</span>${esc(e.title)}</button>`).join('') || '<div class="note">話がありません</div>'}`).join('')}
+      <button id="done" style="justify-content:center;color:var(--accent);font-weight:600">完了</button></div>`;
+    bg.querySelectorAll('[data-id]').forEach(b => b.onclick = () => {
+      rec(); const id = b.dataset.id, i = it.epIds.indexOf(id);
+      if (i >= 0) it.epIds.splice(i, 1); else it.epIds.push(id);
+      onChange(); draw();
+    });
+    bg.querySelectorAll('[data-open]').forEach(b => b.onclick = () => { bg.remove(); go(`#/e/${w.id}/${b.dataset.open}`); });
+    bg.querySelector('#done').onclick = () => bg.remove();
+  };
+  draw();
+  bg.onclick = e => { if (e.target === bg) bg.remove(); };
+  document.body.appendChild(bg);
+}
+
+/* 部品「タグで絞り込み」：複数選ぶと「どれか1つでも当てはまる」ものを出す */
 const filters = {};   // 作品ごとに、選んでいるタグ
 function selTags(w){ return (filters[w.id] = (filters[w.id] || []).filter(id => tagOf(w, id))); }
-const matchAll = (tags, sel) => sel.every(id => tags.includes(id));
+const matchSel = (tags, sel) => !sel.length || sel.some(id => tags.includes(id));
 function chipBar(w){
   const all = [...w.characters.map(c => tagOf(w, c.id)), ...w.worldItems.map(x => tagOf(w, x.id))];
   if (!all.length) return '';
@@ -374,7 +401,7 @@ function bindChips(w, rerender){
   });
   const cl = $app.querySelector('[data-chipclear]'); if (cl) cl.onclick = () => { filters[w.id] = []; rerender(); };
 }
-function selNames(w){ return selTags(w).map(id => `「${esc(tagOf(w, id).name)}」`).join('と'); }
+function selNames(w){ return selTags(w).map(id => `「${esc(tagOf(w, id).name)}」`).join('か'); }
 
 /* ===== 部品「長押し並べ替え」 =====
    行を長押し（約0.4秒）→ 浮き上がる → 指を動かして好きな位置で離す。
@@ -569,34 +596,84 @@ function renderWork(wid, tab){
   document.getElementById('back').onclick = () => go('#/');
   const ttl = document.getElementById('wttl');
   ttl.addEventListener('input', () => { rec('wt:' + w.id); w.title = ttl.value.trim() || '無題の作品'; touch(w); saveSoon(); });
-  $app.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => location.replace(`#/w/${wid}/${b.dataset.tab}`));
+  $app.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => switchTab(w, b.dataset.tab));
   const on = $app.querySelector('nav.tabs .on'); if (on) on.scrollIntoView({ inline:'center', block:'nearest' });
-  const pane = document.getElementById('pane');
-  ({ body:paneBody, synopsis:paneSynopsis, chars:paneChars, world:paneWorld, ideas:paneIdeas })[tab](w, pane);
-  swipeTabs(pane, wid, tab);
+  mountPane(w, tab, 0);
 }
-/* 部品「スワイプでタブ移動」 */
-function swipeTabs(el, wid, tab){
-  let sx = 0, sy = 0, st = 0, ok = false;
+/* 部品「タブ切り替え」：画面全体は作り直さず、中身だけを横にスライドして入れ替える */
+const PANES = { body:'paneBody', synopsis:'paneSynopsis', chars:'paneChars', world:'paneWorld', ideas:'paneIdeas' };
+const tabIndex = t => TABS.findIndex(x => x[0] === t);
+function mountPane(w, tab, dir){
+  const old = document.getElementById('pane');
+  const neu = document.createElement('main'); neu.id = 'pane'; neu.dataset.tab = tab;
+  old.replaceWith(neu);
+  window[PANES[tab]](w, neu);
+  swipeTabs(neu, w, tab);
+  if (dir){
+    neu.style.transition = 'none';
+    neu.style.transform = `translateX(${dir * 35}%)`; neu.style.opacity = '0.2';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      neu.style.transition = 'transform .22s cubic-bezier(.2,.7,.3,1), opacity .22s';
+      neu.style.transform = ''; neu.style.opacity = '';
+      setTimeout(() => { neu.style.transition = ''; }, 260);
+    }));
+  }
+}
+function switchTab(w, tab, dirOverride){
+  const cur = document.getElementById('pane')?.dataset.tab;
+  if (cur === tab) return;
+  const dir = dirOverride || (tabIndex(tab) > tabIndex(cur) ? 1 : -1);
+  const h = `#/w/${w.id}/${tab}`;
+  history.replaceState(null, '', h); lastHash = h;
+  $app.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  const on = $app.querySelector('nav.tabs .on'); if (on) on.scrollIntoView({ inline:'center', block:'nearest', behavior:'smooth' });
+  window.scrollTo(0, 0);
+  mountPane(w, tab, dir);
+}
+/* 部品「スワイプでタブ移動」：指に合わせて中身が動き、離すと隣のタブへ */
+function swipeTabs(el, w, tab){
+  let sx = 0, sy = 0, mode = null, dx = 0;
+  const i = tabIndex(tab);
   el.addEventListener('touchstart', e => {
-    const t = e.touches[0]; sx = t.clientX; sy = t.clientY; st = now();
-    ok = !e.target.closest('.chips,.seg') && e.touches.length === 1;
+    const t = e.touches[0]; sx = t.clientX; sy = t.clientY; dx = 0;
+    mode = (e.touches.length === 1 && !e.target.closest('.chips,.seg')) ? 'wait' : null;
   }, { passive:true });
-  el.addEventListener('touchend', e => {
-    if (!ok || dragging) return;
-    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
-    if (Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) * 0.6 || now() - st > 700) return;
-    const i = TABS.findIndex(x => x[0] === tab), j = i + (dx < 0 ? 1 : -1);
-    if (j < 0 || j >= TABS.length) return;
-    location.replace(`#/w/${wid}/${TABS[j][0]}`);
-  }, { passive:true });
+  el.addEventListener('touchmove', e => {
+    if (!mode || dragging) { mode = null; return; }
+    const t = e.touches[0], mx = t.clientX - sx, my = t.clientY - sy;
+    if (mode === 'wait'){
+      if (Math.abs(mx) < 10 && Math.abs(my) < 10) return;
+      mode = Math.abs(mx) > Math.abs(my) * 1.3 ? 'h' : null;
+      if (!mode) return;
+      el.style.transition = 'none';
+    }
+    e.preventDefault();
+    dx = mx;
+    const edge = (dx > 0 && i === 0) || (dx < 0 && i === TABS.length - 1);
+    el.style.transform = `translateX(${edge ? dx * 0.25 : dx}px)`;
+    el.style.opacity = String(1 - Math.min(Math.abs(dx) / innerWidth, 1) * 0.5);
+  }, { passive:false });
+  const end = () => {
+    if (mode !== 'h'){ mode = null; return; }
+    mode = null;
+    const j = i + (dx < 0 ? 1 : -1);
+    if (Math.abs(dx) > innerWidth * 0.22 && j >= 0 && j < TABS.length){
+      el.style.transition = 'transform .12s ease-in, opacity .12s';
+      el.style.transform = `translateX(${dx < 0 ? -60 : 60}%)`; el.style.opacity = '0';
+      setTimeout(() => switchTab(w, TABS[j][0], dx < 0 ? 1 : -1), 110);
+    } else {
+      el.style.transition = 'transform .18s ease-out, opacity .18s';
+      el.style.transform = ''; el.style.opacity = '';
+    }
+  };
+  el.addEventListener('touchend', end); el.addEventListener('touchcancel', end);
 }
 
 /* タブ「本文」：章と話 */
 function paneBody(w, pane){
   const sel = selTags(w);
   if (sel.length){
-    const hits = allEpisodes(w).filter(x => matchAll(x.e.tags, sel));
+    const hits = allEpisodes(w).filter(x => matchSel(x.e.tags, sel));
     pane.innerHTML = `${chipBar(w)}
       <div class="hint"><span>${selNames(w)}が出る話：${hits.length} 話</span></div>
       <div class="card">${hits.map(({ c, e }) => epRow(w, e, c.title)).join('') || '<div class="empty">当てはまる話はありません</div>'}</div>`;
@@ -652,7 +729,7 @@ function paneBody(w, pane){
   }});
 }
 function epRow(w, e, chapName){
-  const n = w.ideas.filter(i => i.epId === e.id).length;
+  const n = w.ideas.filter(i => i.epIds.includes(e.id)).length;
   return `<div class="row" data-id="${e.id}">
     <button class="main" data-ep="${e.id}">
       <div class="t">${esc(e.title)}</div>
@@ -766,7 +843,7 @@ function paneWorld(w, pane){
 let hideUsed = false;
 function paneIdeas(w, pane){
   const sel = selTags(w);
-  let list = w.ideas.filter(i => matchAll(i.tags, sel));
+  let list = w.ideas.filter(i => matchSel(i.tags, sel));
   if (hideUsed) list = list.filter(i => !i.used);
   const canSort = !sel.length && !hideUsed;
   pane.innerHTML = `
@@ -778,7 +855,7 @@ function paneIdeas(w, pane){
       <div class="row ${i.used ? 'used' : ''}" data-id="${i.id}">
         <button class="main" data-i="${i.id}">
           <div class="pv" style="color:var(--ink);font-size:15px;margin-top:0;-webkit-line-clamp:3">${esc(i.text.trim()) || '（空のメモ）'}</div>
-          <div class="m">${i.used ? '<span>✓ 使った</span>' : ''}${epLabel(w, i.epId) ? `<span>📄 ${esc(epLabel(w, i.epId))}</span>` : ''}<span>${fmtDate(i.createdAt)}</span>${tagsHtml(w, i.tags)}</div>
+          <div class="m">${i.used ? '<span>✓ 使った</span>' : ''}${epLabel(w, i.epIds) ? `<span>📄 ${esc(epLabel(w, i.epIds))}</span>` : ''}<span>${fmtDate(i.createdAt)}</span>${tagsHtml(w, i.tags)}</div>
         </button>
         <button class="act" data-itag="${i.id}" aria-label="タグを付ける">${I.tag}</button>
         ${delBtn(`data-deli="${i.id}"`)}
@@ -788,7 +865,7 @@ function paneIdeas(w, pane){
   const q = document.getElementById('qtext');
   document.getElementById('qadd').onclick = () => {
     const t = q.value.trim(); if (!t) { q.focus(); return; }
-    rec(); w.ideas.unshift({ id:uid(), text:t, tags:[...sel], used:false, epId:null, createdAt:now() });
+    rec(); w.ideas.unshift({ id:uid(), text:t, tags:[...sel], used:false, epIds:[], createdAt:now() });
     touch(w); save(); rerender(); toast('ネタを追加しました');
   };
   document.getElementById('hideUsed').onclick = () => { hideUsed = !hideUsed; rerender(); };
@@ -829,7 +906,7 @@ function renderEpisode(wid, eid, caret){
   const w = findWork(wid); if (!w){ go('#/'); return; }
   const x = findEp(w, eid); if (!x){ go(`#/w/${wid}/body`); return; }
   const ep = x.e;
-  const ideas = () => w.ideas.filter(i => i.epId === ep.id);
+  const ideas = () => w.ideas.filter(i => i.epIds.includes(ep.id));
   const footHtml = () => `<button class="fbtn" id="tagBtn">${I.tag}${ep.tags.length || ''}</button>
     <button class="fbtn" id="ideaBtn">${I.idea}${ideas().length || ''}</button>
     <div class="grow">${tagsHtml(w, ep.tags)}</div><span id="cnt"></span>`;
@@ -844,10 +921,10 @@ function renderEpisode(wid, eid, caret){
       sheet(`この話に結びついたネタ（${list.length}）`, [
         ...list.map(i => ({ label:(i.used ? '✓ ' : '') + i.text.trim().slice(0, 40), fn:() => go(`#/i/${wid}/${i.id}`) })),
         { label:'＋ この話用のネタを新しく作る', fn:() => {
-          rec(); const it = { id:uid(), text:'', tags:[...ep.tags], used:false, epId:ep.id, createdAt:now() };
+          rec(); const it = { id:uid(), text:'', tags:[...ep.tags], used:false, epIds:[ep.id], createdAt:now() };
           w.ideas.unshift(it); touch(w); save(); go(`#/i/${wid}/${it.id}`);
         } },
-      ], list.length ? null : 'ネタ帳のネタを開いて「📄 話」からこの話を選ぶと、ここに並びます。');
+      ], list.length ? null : 'ネタ帳のネタを開いて「📄」からこの話にチェックを付けると、ここに並びます。');
     };
   };
   bindFoot(); upd();
@@ -898,22 +975,14 @@ function renderIdea(wid, iid, caret){
   const w = findWork(wid); if (!w){ go('#/'); return; }
   const it = w.ideas.find(i => i.id === iid); if (!it){ go(`#/w/${wid}/ideas`); return; }
   const footHtml = () => `<button class="fbtn" id="tagBtn">${I.tag}${it.tags.length || ''}</button>
-    <button class="fbtn" id="epBtn" style="max-width:40%;overflow:hidden;text-overflow:ellipsis">${I.page}${esc(epLabel(w, it.epId) || '話')}</button>
+    <button class="fbtn" id="epBtn" style="max-width:40%;overflow:hidden;text-overflow:ellipsis">${I.page}${esc(epLabel(w, it.epIds) || '話')}</button>
     <div class="grow">${tagsHtml(w, it.tags)}</div><button class="fbtn ${it.used ? 'on' : ''}" id="usedBtn">${it.used ? '✓ 使った' : '使った'}</button>`;
   const { body, del } = editorShell({ back:`#/w/${wid}/ideas`, title:null, bodyText:it.text, bodyPh:'ネタの中身', foot:footHtml() });
   const foot = document.querySelector('.foot');
   const bindFoot = () => {
     document.getElementById('tagBtn').onclick = () => tagSheet(w, it, () => { touch(w); save(); foot.innerHTML = footHtml(); bindFoot(); });
     document.getElementById('usedBtn').onclick = () => { rec(); it.used = !it.used; touch(w); save(); foot.innerHTML = footHtml(); bindFoot(); };
-    document.getElementById('epBtn').onclick = () => {
-      const items = [];
-      if (it.epId && findEp(w, it.epId)) items.push({ label:'→ この話を開く', fn:() => go(`#/e/${wid}/${it.epId}`) }, { label:'結びつけを外す', fn:() => { rec(); it.epId = null; touch(w); save(); foot.innerHTML = footHtml(); bindFoot(); } });
-      w.chapters.forEach(c => {
-        items.push({ head:c.title });
-        c.episodes.forEach(e => items.push({ label:e.title, on:e.id === it.epId, fn:() => { rec(); it.epId = e.id; touch(w); save(); foot.innerHTML = footHtml(); bindFoot(); } }));
-      });
-      sheet('このネタを使う話', items);
-    };
+    document.getElementById('epBtn').onclick = () => epSheet(w, it, () => { touch(w); save(); foot.innerHTML = footHtml(); bindFoot(); });
   };
   bindFoot();
   body.addEventListener('input', () => { rec('id:' + it.id); it.text = body.value; touch(w); saveSoon(); });
@@ -922,7 +991,6 @@ function renderIdea(wid, iid, caret){
 }
 
 /* ===== 画面の切り替え（スマホの「戻る」でも戻れる） ===== */
-let lastHash = null;
 function route(keep){
   flushSave();
   const ta = document.getElementById('body'), caret = keep && ta ? ta.selectionStart : null, sy = window.scrollY;
@@ -941,7 +1009,7 @@ window.addEventListener('hashchange', () => route());
 
 (async () => {
   try { data = await dbGet('data'); } catch (e) { alert('データを読み込めませんでした：' + e); }
-  const wasOld = data && data.version !== 3;
+  const wasOld = data && data.version !== 4;
   data = migrate(data);
   if (wasOld) await save();
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
