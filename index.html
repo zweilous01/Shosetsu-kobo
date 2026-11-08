@@ -639,7 +639,7 @@ function switchTab(w, tab, dirOverride){
   if (cur === tab) return;
   const dir = dirOverride || (tabIndex(tab) > tabIndex(cur) ? 1 : -1);
   const h = `#/w/${w.id}/${tab}`;
-  history.replaceState(null, '', h); lastHash = h;
+  history.replaceState(null, '', h); lastHash = h; saveSpotSoon();
   $app.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
   moveInd(tabIndex(tab), 0, true);
   const on = $app.querySelector('nav.tabs .on'); if (on) on.scrollIntoView({ inline:'center', block:'nearest', behavior:'smooth' });
@@ -1022,8 +1022,33 @@ function route(keep){
   else if (p[0] === 'i' && p[2]) renderIdea(p[1], p[2], caret);
   else renderHome();
   window.scrollTo(0, same ? sy : 0);
+  saveSpotSoon();
 }
 window.addEventListener('hashchange', () => route());
+
+/* 部品「続きから」：最後に開いていた画面・スクロール位置・本文の表示位置を覚えておき、次に開いたときに戻る */
+const SPOT_KEY = 'kobo-last-spot';
+function saveSpot(){
+  try {
+    const ta = document.getElementById('body');
+    localStorage.setItem(SPOT_KEY, JSON.stringify({ hash:location.hash.replace(/\?.*$/, ''), sy:window.scrollY,
+      taTop: ta ? ta.scrollTop : 0, caret: ta ? ta.selectionStart : null }));
+  } catch {}
+}
+function loadSpot(){ try { return JSON.parse(localStorage.getItem(SPOT_KEY) || 'null'); } catch { return null; } }
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveSpot(); });
+window.addEventListener('pagehide', saveSpot);
+let spotTimer = null;
+const saveSpotSoon = () => { clearTimeout(spotTimer); spotTimer = setTimeout(saveSpot, 800); };
+window.addEventListener('scroll', saveSpotSoon, { passive:true });
+document.addEventListener('scroll', e => { if (e.target.id === 'body') saveSpotSoon(); }, { capture:true, passive:true });
+document.addEventListener('selectionchange', () => { if (document.activeElement?.id === 'body') saveSpotSoon(); });
+function restoreSpot(sp){
+  const ta = document.getElementById('body');
+  if (ta && sp.taTop) ta.scrollTop = sp.taTop;
+  if (ta && sp.caret != null){ try { ta.setSelectionRange(sp.caret, sp.caret); } catch {} }
+  if (sp.sy) window.scrollTo(0, sp.sy);
+}
 
 (async () => {
   try { data = await dbGet('data'); } catch (e) { alert('データを読み込めませんでした：' + e); }
@@ -1031,7 +1056,16 @@ window.addEventListener('hashchange', () => route());
   data = migrate(data);
   if (wasOld) await save();
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
-  route();
+  const sp = loadSpot(), bare = !location.hash || location.hash === '#' || location.hash === '#/';
+  if (bare && sp && sp.hash && sp.hash !== '#/'){
+    history.replaceState(null, '', sp.hash);
+    // 戻るボタンで作品一覧へ戻れるよう、一覧を1つ手前に置く
+    if (!sp.hash.startsWith('#/w/')){
+      const wid = sp.hash.split('/')[2];
+      history.replaceState(null, '', `#/w/${wid}`); history.pushState(null, '', sp.hash);
+    }
+    route(); requestAnimationFrame(() => restoreSpot(sp));
+  } else route();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
 </script>
