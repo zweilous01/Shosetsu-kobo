@@ -1,5 +1,5 @@
 // 電波がなくても開けるように、アプリの部品をスマホに控えておく
-const CACHE = 'kobo-v1';
+const CACHE = 'kobo-v2';
 const FILES = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)));
