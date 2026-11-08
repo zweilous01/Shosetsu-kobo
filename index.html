@@ -47,9 +47,12 @@ header.bar h1{font-family:var(--serif);font-size:19px;font-weight:600;margin:0 0
 main{flex:1;padding:12px 16px 120px;max-width:760px;width:100%;margin:0 auto}
 
 /* タブ（今いるタブは枠で囲む） */
-nav.tabs{display:flex;gap:4px;background:var(--paper);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;padding:6px 6px}
-nav.tabs button{flex:1 0 auto;padding:8px 10px;font-size:14px;color:var(--sub);border:1.5px solid transparent;border-radius:10px;white-space:nowrap}
-nav.tabs button.on{color:var(--accent);border-color:var(--accent);background:var(--accent-soft);font-weight:700}
+nav.tabs{position:relative;display:flex;gap:4px;background:var(--paper);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;padding:6px 6px}
+nav.tabs button{position:relative;z-index:1;flex:1 0 auto;padding:8px 10px;font-size:14px;color:var(--sub);border:1.5px solid transparent;border-radius:10px;white-space:nowrap;transition:color .2s}
+nav.tabs button.on{color:var(--accent);font-weight:700}
+/* 部品「タブの枠」：枠そのものが横にスライドして移動する */
+.tab-ind{position:absolute;z-index:0;top:6px;bottom:6px;left:0;width:0;border:1.5px solid var(--accent);background:var(--accent-soft);border-radius:10px;pointer-events:none}
+.tab-ind.anim{transition:transform .26s cubic-bezier(.2,.7,.3,1),width .26s cubic-bezier(.2,.7,.3,1)}
 
 /* バックアップ帯 */
 .bk{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin:4px 0 14px;
@@ -589,7 +592,7 @@ function renderWork(wid, tab){
         <span class="status" id="status"></span>
         ${undoBtns()}
       </header>
-      <nav class="tabs">${TABS.map(([k, l]) => `<button data-tab="${k}" class="${k === tab ? 'on' : ''}">${l}</button>`).join('')}</nav>
+      <nav class="tabs"><span class="tab-ind"></span>${TABS.map(([k, l]) => `<button data-tab="${k}" class="${k === tab ? 'on' : ''}">${l}</button>`).join('')}</nav>
     </div>
     <main id="pane"></main>`;
   bindUndo();
@@ -598,8 +601,20 @@ function renderWork(wid, tab){
   ttl.addEventListener('input', () => { rec('wt:' + w.id); w.title = ttl.value.trim() || '無題の作品'; touch(w); saveSoon(); });
   $app.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => switchTab(w, b.dataset.tab));
   const on = $app.querySelector('nav.tabs .on'); if (on) on.scrollIntoView({ inline:'center', block:'nearest' });
+  moveInd(tabIndex(tab), 0, false);
   mountPane(w, tab, 0);
 }
+/* 枠を i 番目のタブへ。frac（-1〜1）を渡すと、隣のタブとの途中に置く（スワイプ中に指へ追従） */
+function moveInd(i, frac, animate){
+  const ind = $app.querySelector('.tab-ind'), bs = [...$app.querySelectorAll('nav.tabs [data-tab]')];
+  if (!ind || !bs[i]) return;
+  const j = Math.max(0, Math.min(bs.length - 1, i + Math.sign(frac))), f = Math.abs(frac);
+  const a = bs[i], b = bs[j];
+  const left = a.offsetLeft + (b.offsetLeft - a.offsetLeft) * f, width = a.offsetWidth + (b.offsetWidth - a.offsetWidth) * f;
+  ind.classList.toggle('anim', !!animate);
+  ind.style.transform = `translateX(${left}px)`; ind.style.width = width + 'px';
+}
+window.addEventListener('resize', () => { const t = document.getElementById('pane')?.dataset.tab; if (t) moveInd(tabIndex(t), 0, false); });
 /* 部品「タブ切り替え」：画面全体は作り直さず、中身だけを横にスライドして入れ替える */
 const PANES = { body:'paneBody', synopsis:'paneSynopsis', chars:'paneChars', world:'paneWorld', ideas:'paneIdeas' };
 const tabIndex = t => TABS.findIndex(x => x[0] === t);
@@ -626,6 +641,7 @@ function switchTab(w, tab, dirOverride){
   const h = `#/w/${w.id}/${tab}`;
   history.replaceState(null, '', h); lastHash = h;
   $app.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  moveInd(tabIndex(tab), 0, true);
   const on = $app.querySelector('nav.tabs .on'); if (on) on.scrollIntoView({ inline:'center', block:'nearest', behavior:'smooth' });
   window.scrollTo(0, 0);
   mountPane(w, tab, dir);
@@ -652,6 +668,7 @@ function swipeTabs(el, w, tab){
     const edge = (dx > 0 && i === 0) || (dx < 0 && i === TABS.length - 1);
     el.style.transform = `translateX(${edge ? dx * 0.25 : dx}px)`;
     el.style.opacity = String(1 - Math.min(Math.abs(dx) / innerWidth, 1) * 0.5);
+    if (!edge) moveInd(i, Math.max(-1, Math.min(1, -dx / innerWidth)), false);
   }, { passive:false });
   const end = () => {
     if (mode !== 'h'){ mode = null; return; }
@@ -664,6 +681,7 @@ function swipeTabs(el, w, tab){
     } else {
       el.style.transition = 'transform .18s ease-out, opacity .18s';
       el.style.transform = ''; el.style.opacity = '';
+      moveInd(i, 0, true);
     }
   };
   el.addEventListener('touchend', end); el.addEventListener('touchcancel', end);
