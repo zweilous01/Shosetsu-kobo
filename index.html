@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>小説工房</title>
+<meta name="theme-color" content="#3b3a36">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#f6f3ec; --paper:#fffdf8; --ink:#2b2a27; --sub:#7a766c; --line:#e3ddd0;
+  --accent:#8a3b2e; --accent-soft:#f1e3dc; --warn:#b5651d; --warn-soft:#fbeedd;
+  --head:#3b3a36; --head-ink:#f6f3ec;
+  --serif:"Noto Serif JP","Noto Serif CJK JP","Hiragino Mincho ProN","Yu Mincho",serif;
+  --sans:system-ui,-apple-system,"Noto Sans JP","Hiragino Sans",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#1c1b19; --paper:#24231f; --ink:#e8e4da; --sub:#9b968a; --line:#36342f;
+    --accent:#e08a74; --accent-soft:#3a2924; --warn:#e3a35e; --warn-soft:#3a2e20;
+    --head:#141311; --head-ink:#e8e4da;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.app{min-height:100dvh;display:flex;flex-direction:column}
+header.bar{position:sticky;top:0;z-index:5;background:var(--head);color:var(--head-ink);
+  display:flex;align-items:center;gap:4px;padding:calc(env(safe-area-inset-top) + 6px) 8px 6px;min-height:56px}
+header.bar h1{font-family:var(--serif);font-size:19px;font-weight:600;margin:0 0 0 8px;flex:1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.04em}
+.ibtn{width:44px;height:44px;display:grid;place-items:center;border-radius:50%;font-size:20px}
+.ibtn:active{background:rgba(255,255,255,.12)}
+main{flex:1;padding:12px 16px 120px;max-width:760px;width:100%;margin:0 auto}
+
+/* バックアップ帯 */
+.bk{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin:4px 0 14px;
+  background:var(--paper);border:1px solid var(--line);font-size:13px;color:var(--sub)}
+.bk.warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.bk b{flex:1;font-weight:500}
+.bk button{padding:6px 10px;border-radius:8px;border:1px solid currentColor;font-size:13px;white-space:nowrap}
+
+.sec-title{font-size:12px;color:var(--sub);letter-spacing:.1em;margin:18px 4px 8px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:12px}
+.row{display:flex;align-items:center;gap:8px;padding:14px 8px 14px 14px;border-top:1px solid var(--line);min-height:56px}
+.row:first-child{border-top:0}
+.row .main{flex:1;min-width:0;text-align:left}
+.row .t{font-family:var(--serif);font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .m{font-size:12px;color:var(--sub);margin-top:3px}
+.row .more{width:40px;height:40px;border-radius:50%;color:var(--sub);font-size:20px;flex:none}
+.row .more:active{background:var(--line)}
+.chap-head{display:flex;align-items:center;gap:8px;padding:10px 8px 10px 14px;background:var(--accent-soft)}
+.chap-head .t{flex:1;font-family:var(--serif);font-weight:600;font-size:15px;color:var(--accent);min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chap-head .n{font-size:12px;color:var(--sub)}
+.add{display:block;width:100%;text-align:left;padding:12px 14px;color:var(--accent);font-size:14px;border-top:1px dashed var(--line)}
+.empty{text-align:center;color:var(--sub);padding:40px 16px;font-size:14px;line-height:1.8}
+.fab{position:fixed;right:20px;bottom:calc(24px + env(safe-area-inset-bottom));width:60px;height:60px;border-radius:50%;
+  background:var(--accent);color:#fff;font-size:30px;box-shadow:0 4px 14px rgba(0,0,0,.25);z-index:6}
+.wide-btn{display:block;width:100%;padding:14px;border-radius:12px;border:1px dashed var(--accent);color:var(--accent);font-size:15px;margin-top:4px}
+
+/* 本文画面 */
+.editor{height:100dvh;display:flex;flex-direction:column;background:var(--paper)}
+.editor header.bar{position:static}
+.ttl{flex:1;min-width:0;background:transparent;border:0;color:var(--head-ink);font-family:var(--serif);font-size:17px;padding:8px 4px;outline:none}
+.ttl::placeholder{color:rgba(232,228,218,.5)}
+.status{font-size:12px;opacity:.75;padding:0 6px;white-space:nowrap}
+textarea.body{flex:1;width:100%;border:0;outline:none;resize:none;background:var(--paper);color:var(--ink);
+  font-family:var(--serif);font-size:17px;line-height:1.9;padding:16px 18px 40px;letter-spacing:.02em}
+.foot{display:flex;justify-content:space-between;font-size:12px;color:var(--sub);padding:6px 16px calc(6px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--paper)}
+
+/* 下から出るメニュー */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--paper);width:100%;max-width:560px;border-radius:16px 16px 0 0;padding:8px 0 calc(8px + env(safe-area-inset-bottom))}
+.sheet h3{font-size:13px;color:var(--sub);font-weight:500;margin:8px 20px 6px}
+.sheet button{display:block;width:100%;text-align:left;padding:15px 20px;font-size:16px}
+.sheet button:active{background:var(--line)}
+.sheet .danger{color:#c0392b}
+.sheet .note{font-size:12px;color:var(--sub);padding:0 20px 8px;line-height:1.6}
+.toast{position:fixed;left:50%;bottom:calc(100px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:20px;font-size:14px;z-index:30;max-width:90vw}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<input type="file" id="importFile" accept=".json,application/json" hidden>
+<script>
+/* ===== 保存庫（スマホの中に保存） ===== */
+const DB_NAME = 'shosetsu-kobo', STORE = 'kv';
+function openDB(){
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(DB_NAME, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore(STORE);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function dbGet(key){
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const r = db.transaction(STORE).objectStore(STORE).get(key);
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+}
+async function dbSet(key, val){
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put(val, key);
+    tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
+  });
+}
+
+/* ===== データ ===== */
+let data = null;
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const now = () => Date.now();
+function emptyData(){ return { app:'shosetsu-kobo', version:1, works:[], lastBackupAt:null }; }
+function newWork(title){
+  return { id:uid(), title, createdAt:now(), updatedAt:now(),
+    chapters:[ newChapter('第1章') ],
+    synopsis:'', world:'', ideas:[], characters:[] }; // あらすじ・世界観・ネタ帳・人物は次のステップで画面を作る
+}
+function newChapter(title){ return { id:uid(), title, episodes:[] }; }
+function newEpisode(title){ return { id:uid(), title, body:'', updatedAt:now() }; }
+
+let saveTimer = null;
+function save(){ return dbSet('data', data).then(() => setStatus('保存済み')).catch(() => setStatus('保存に失敗')); }
+function saveSoon(){ setStatus('保存中…'); clearTimeout(saveTimer); saveTimer = setTimeout(save, 600); }
+function flushSave(){ if (saveTimer){ clearTimeout(saveTimer); saveTimer = null; save(); } }
+document.addEventListener('visibilitychange', () => { if (document.hidden) flushSave(); });
+window.addEventListener('pagehide', flushSave);
+
+/* ===== 小道具 ===== */
+const $app = document.getElementById('app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const count = s => (s || '').replace(/\s/g, '').length;
+const fmtN = n => n.toLocaleString('ja-JP');
+function fmtDate(t){
+  if (!t) return '';
+  const d = new Date(t), p = n => String(n).padStart(2, '0');
+  return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function workChars(w){ return w.chapters.reduce((a, c) => a + c.episodes.reduce((b, e) => b + count(e.body), 0), 0); }
+function findWork(id){ return data.works.find(w => w.id === id); }
+function touch(w){ w.updatedAt = now(); }
+function setStatus(t){ const el = document.getElementById('status'); if (el) el.textContent = t; }
+function toast(t){
+  const d = document.createElement('div'); d.className = 'toast'; d.textContent = t;
+  document.body.appendChild(d); setTimeout(() => d.remove(), 2200);
+}
+function move(arr, i, dir){ const j = i + dir; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; }
+
+/* 部品「下メニュー」 */
+function sheet(title, items, note){
+  const bg = document.createElement('div'); bg.className = 'sheet-bg';
+  bg.innerHTML = `<div class="sheet">${title ? `<h3>${esc(title)}</h3>` : ''}${note ? `<div class="note">${esc(note)}</div>` : ''}</div>`;
+  const s = bg.firstChild;
+  items.filter(Boolean).forEach(it => {
+    const b = document.createElement('button'); b.textContent = it.label;
+    if (it.danger) b.className = 'danger';
+    b.onclick = () => { bg.remove(); it.fn(); };
+    s.appendChild(b);
+  });
+  const c = document.createElement('button'); c.textContent = 'やめる'; c.style.color = 'var(--sub)';
+  c.onclick = () => bg.remove(); s.appendChild(c);
+  bg.onclick = e => { if (e.target === bg) bg.remove(); };
+  document.body.appendChild(bg);
+}
+function ask(msg, def){ const v = prompt(msg, def ?? ''); return v === null ? null : v.trim(); }
+
+/* ===== 部品「バックアップ」 ===== */
+function stamp(){
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
+}
+function download(name, text, type){
+  const blob = new Blob([text], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function exportBackup(){
+  data.lastBackupAt = now();
+  download(`小説工房バックアップ_${stamp()}.json`, JSON.stringify(data, null, 1), 'application/json');
+  save(); toast('バックアップを書き出しました（ダウンロードフォルダ）'); route();
+}
+function importBackup(){ document.getElementById('importFile').click(); }
+document.getElementById('importFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  let incoming;
+  try { incoming = JSON.parse(await f.text()); } catch { alert('このファイルは読み込めませんでした。'); return; }
+  if (!incoming || incoming.app !== 'shosetsu-kobo' || !Array.isArray(incoming.works)){
+    alert('小説工房のバックアップファイルではないようです。'); return;
+  }
+  const n = incoming.works.length;
+  if (!confirm(`バックアップ（作品 ${n} 件）を読み込みます。\n今アプリにあるデータは、このバックアップの内容に置き換わります。\n\n（念のため、置き換える前のデータはアプリ内に1つだけ控えておきます）\n\n読み込みますか？`)) return;
+  await dbSet('beforeImport', { savedAt: now(), data });
+  data = incoming; await save();
+  toast('読み込みました'); location.hash = '#/';  route();
+});
+async function restoreBeforeImport(){
+  const b = await dbGet('beforeImport');
+  if (!b){ alert('控えはありません。'); return; }
+  if (!confirm(`${fmtDate(b.savedAt)} に控えたデータ（読み込み前の状態）に戻しますか？\n今のデータは置き換わります。`)) return;
+  const cur = data; data = b.data;
+  await dbSet('beforeImport', { savedAt: now(), data: cur });
+  await save(); toast('読み込み前の状態に戻しました'); route();
+}
+function exportText(w){
+  let t = `${w.title}\n\n`;
+  w.chapters.forEach(c => {
+    t += `\n■ ${c.title}\n\n`;
+    c.episodes.forEach(e => { t += `◆ ${e.title}\n\n${e.body}\n\n`; });
+  });
+  download(`${w.title}_${stamp()}.txt`, t, 'text/plain');
+  toast('テキストで書き出しました');
+}
+function backupBar(){
+  const t = data.lastBackupAt;
+  if (!data.works.length && !t) return '';
+  let msg, warn = false;
+  if (!t){ msg = 'まだバックアップしていません'; warn = true; }
+  else {
+    const days = Math.floor((now() - t) / 86400000);
+    msg = days === 0 ? '今日バックアップ済み' : `最後のバックアップから ${days} 日`;
+    warn = days >= 3;
+  }
+  return `<div class="bk ${warn ? 'warn' : ''}"><b>${msg}</b><button id="bkNow">書き出す</button></div>`;
+}
+
+/* ===== 画面「作品一覧」 ===== */
+function renderHome(){
+  const ws = [...data.works].sort((a, b) => b.updatedAt - a.updatedAt);
+  $app.innerHTML = `
+    <header class="bar"><h1>小説工房</h1><button class="ibtn" id="menu" aria-label="メニュー">⋮</button></header>
+    <main>
+      ${backupBar()}
+      ${ws.length ? `<div class="sec-title">作品</div><div class="card">${ws.map(w => `
+        <div class="row">
+          <button class="main" data-open="${w.id}">
+            <div class="t">${esc(w.title)}</div>
+            <div class="m">${fmtN(workChars(w))} 字 ・ ${w.chapters.length} 章 ・ 更新 ${fmtDate(w.updatedAt)}</div>
+          </button>
+          <button class="more" data-more="${w.id}" aria-label="操作">⋯</button>
+        </div>`).join('')}</div>`
+      : `<div class="empty">まだ作品がありません。<br>右下の ＋ から作品を作りましょう。</div>`}
+    </main>
+    <button class="fab" id="addWork" aria-label="作品を追加">＋</button>`;
+  $app.querySelectorAll('[data-open]').forEach(b => b.onclick = () => location.hash = `#/w/${b.dataset.open}`);
+  $app.querySelectorAll('[data-more]').forEach(b => b.onclick = () => workMenu(findWork(b.dataset.more)));
+  document.getElementById('addWork').onclick = () => {
+    const t = ask('作品のタイトル', '無題の作品'); if (!t) return;
+    const w = newWork(t); data.works.push(w); save(); location.hash = `#/w/${w.id}`;
+  };
+  document.getElementById('menu').onclick = () => sheet('メニュー', [
+    { label:'バックアップを書き出す', fn:exportBackup },
+    { label:'バックアップを読み込む', fn:importBackup },
+    { label:'読み込み前の状態に戻す', fn:restoreBeforeImport },
+  ], 'バックアップは全作品を1つのファイルにまとめます。こまめに書き出して、Googleドライブなどにも置いておくと安心です。');
+  const bk = document.getElementById('bkNow'); if (bk) bk.onclick = exportBackup;
+}
+function workMenu(w){
+  sheet(w.title, [
+    { label:'タイトルを変える', fn:() => { const t = ask('作品のタイトル', w.title); if (t){ w.title = t; touch(w); save(); route(); } } },
+    { label:'テキストで書き出す（.txt）', fn:() => exportText(w) },
+    { label:'作品を削除する', danger:true, fn:() => {
+      if (!confirm(`「${w.title}」を削除します。\n本文もすべて消え、元に戻せません。\n（心配なら先にバックアップを書き出してください）\n\n削除しますか？`)) return;
+      data.works = data.works.filter(x => x !== w); save(); route();
+    } },
+  ]);
+}
+
+/* ===== 画面「章と話の一覧」 ===== */
+let sortMode = false;
+function renderWork(wid){
+  const w = findWork(wid); if (!w){ location.hash = '#/'; return; }
+  $app.innerHTML = `
+    <header class="bar">
+      <button class="ibtn" id="back" aria-label="戻る">←</button>
+      <h1>${esc(w.title)}</h1>
+      <button class="ibtn" id="sort" aria-label="並べ替え" style="font-size:15px;width:auto;padding:0 12px;border-radius:20px;${sortMode ? 'background:rgba(255,255,255,.18)' : ''}">${sortMode ? '完了' : '並べ替え'}</button>
+    </header>
+    <main>
+      <div class="m" style="font-size:12px;color:var(--sub);margin:2px 4px 10px">合計 ${fmtN(workChars(w))} 字</div>
+      ${w.chapters.map((c, ci) => `
+        <div class="card">
+          <div class="chap-head">
+            <div class="t">${esc(c.title)}</div>
+            <span class="n">${c.episodes.length} 話</span>
+            ${sortMode
+              ? `<button class="more" data-cmv="${ci}:-1">▲</button><button class="more" data-cmv="${ci}:1">▼</button>`
+              : `<button class="more" data-cmore="${ci}" aria-label="章の操作">⋯</button>`}
+          </div>
+          ${c.episodes.map((e, ei) => `
+            <div class="row">
+              <button class="main" data-ep="${ci}:${ei}">
+                <div class="t">${esc(e.title)}</div>
+                <div class="m">${fmtN(count(e.body))} 字 ・ ${fmtDate(e.updatedAt)}</div>
+              </button>
+              ${sortMode
+                ? `<button class="more" data-emv="${ci}:${ei}:-1">▲</button><button class="more" data-emv="${ci}:${ei}:1">▼</button>`
+                : `<button class="more" data-emore="${ci}:${ei}" aria-label="話の操作">⋯</button>`}
+            </div>`).join('')}
+          ${sortMode ? '' : `<button class="add" data-addep="${ci}">＋ 話を追加</button>`}
+        </div>`).join('')}
+      ${sortMode ? '' : `<button class="wide-btn" id="addChap">＋ 章を追加</button>`}
+    </main>`;
+  document.getElementById('back').onclick = () => location.hash = '#/';
+  document.getElementById('sort').onclick = () => { sortMode = !sortMode; renderWork(wid); };
+  const ac = document.getElementById('addChap');
+  if (ac) ac.onclick = () => {
+    const t = ask('章の名前', `第${w.chapters.length + 1}章`); if (!t) return;
+    w.chapters.push(newChapter(t)); touch(w); save(); renderWork(wid);
+  };
+  $app.querySelectorAll('[data-addep]').forEach(b => b.onclick = () => {
+    const c = w.chapters[+b.dataset.addep];
+    const t = ask('話のタイトル', `第${c.episodes.length + 1}話`); if (!t) return;
+    const e = newEpisode(t); c.episodes.push(e); touch(w); save();
+    location.hash = `#/e/${w.id}/${e.id}`;
+  });
+  $app.querySelectorAll('[data-ep]').forEach(b => b.onclick = () => {
+    const [ci, ei] = b.dataset.ep.split(':').map(Number);
+    if (sortMode) return;
+    location.hash = `#/e/${w.id}/${w.chapters[ci].episodes[ei].id}`;
+  });
+  $app.querySelectorAll('[data-cmv]').forEach(b => b.onclick = () => {
+    const [ci, d] = b.dataset.cmv.split(':').map(Number); move(w.chapters, ci, d); touch(w); save(); renderWork(wid);
+  });
+  $app.querySelectorAll('[data-emv]').forEach(b => b.onclick = () => {
+    const [ci, ei, d] = b.dataset.emv.split(':').map(Number);
+    const eps = w.chapters[ci].episodes;
+    if (ei + d < 0 && ci > 0){ w.chapters[ci - 1].episodes.push(eps.splice(ei, 1)[0]); }          // 前の章の最後へ
+    else if (ei + d >= eps.length && ci < w.chapters.length - 1){ w.chapters[ci + 1].episodes.unshift(eps.splice(ei, 1)[0]); } // 次の章の最初へ
+    else move(eps, ei, d);
+    touch(w); save(); renderWork(wid);
+  });
+  $app.querySelectorAll('[data-cmore]').forEach(b => b.onclick = () => {
+    const c = w.chapters[+b.dataset.cmore];
+    sheet(c.title, [
+      { label:'章の名前を変える', fn:() => { const t = ask('章の名前', c.title); if (t){ c.title = t; touch(w); save(); renderWork(wid); } } },
+      { label:'章を削除する', danger:true, fn:() => {
+        if (c.episodes.length){ alert('話が入っている章は削除できません。\n先に中の話を削除するか、別の章へ移してください。'); return; }
+        if (!confirm(`「${c.title}」を削除しますか？`)) return;
+        w.chapters = w.chapters.filter(x => x !== c); touch(w); save(); renderWork(wid);
+      } },
+    ]);
+  });
+  $app.querySelectorAll('[data-emore]').forEach(b => b.onclick = () => {
+    const [ci, ei] = b.dataset.emore.split(':').map(Number);
+    const c = w.chapters[ci], e = c.episodes[ei];
+    sheet(e.title, [
+      { label:'タイトルを変える', fn:() => { const t = ask('話のタイトル', e.title); if (t){ e.title = t; touch(w); save(); renderWork(wid); } } },
+      { label:'話を削除する', danger:true, fn:() => {
+        if (!confirm(`「${e.title}」を削除します。\n本文も消え、元に戻せません。\n\n削除しますか？`)) return;
+        c.episodes.splice(ei, 1); touch(w); save(); renderWork(wid);
+      } },
+    ]);
+  });
+}
+
+/* ===== 画面「本文」 ===== */
+function renderEditor(wid, eid){
+  const w = findWork(wid); if (!w){ location.hash = '#/'; return; }
+  let ep = null; w.chapters.forEach(c => c.episodes.forEach(e => { if (e.id === eid) ep = e; }));
+  if (!ep){ location.hash = `#/w/${wid}`; return; }
+  $app.innerHTML = `
+    <div class="editor">
+      <header class="bar">
+        <button class="ibtn" id="back" aria-label="戻る">←</button>
+        <input class="ttl" id="ttl" value="${esc(ep.title)}" placeholder="話のタイトル">
+        <span class="status" id="status">保存済み</span>
+      </header>
+      <textarea class="body" id="body" placeholder="ここに本文を書きます" spellcheck="false">${esc(ep.body)}</textarea>
+      <div class="foot"><span id="cnt"></span><span>自動で保存されます</span></div>
+    </div>`;
+  const body = document.getElementById('body'), ttl = document.getElementById('ttl'), cnt = document.getElementById('cnt');
+  const upd = () => cnt.textContent = `${fmtN(count(body.value))} 字`;
+  upd();
+  body.addEventListener('input', () => { ep.body = body.value; ep.updatedAt = now(); touch(w); upd(); saveSoon(); });
+  ttl.addEventListener('input', () => { ep.title = ttl.value || '無題'; ep.updatedAt = now(); touch(w); saveSoon(); });
+  document.getElementById('back').onclick = () => { flushSave(); location.hash = `#/w/${wid}`; };
+  if (!ep.body) body.focus();
+}
+
+/* ===== 画面の切り替え（スマホの「戻る」でも戻れる） ===== */
+function route(){
+  flushSave();
+  const p = location.hash.replace(/^#\/?/, '').split('/');
+  if (p[0] === 'w' && p[1]) { renderWork(p[1]); window.scrollTo(0, 0); }
+  else if (p[0] === 'e' && p[1] && p[2]) renderEditor(p[1], p[2]);
+  else { sortMode = false; renderHome(); }
+}
+window.addEventListener('hashchange', route);
+
+(async () => {
+  try { data = await dbGet('data'); } catch (e) { alert('データを読み込めませんでした：' + e); }
+  if (!data) data = emptyData();
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  route();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>
