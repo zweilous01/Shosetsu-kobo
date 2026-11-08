@@ -6,8 +6,8 @@
 ## 対象・環境
 - 使う人：本人だけ
 - 端末：当面スマホ（Android）のみ。将来PCでも使うかも（仮）
-- 形：ホーム画面に追加して使うWebアプリ。置き場はGitHub Pages
-- アドレス：https://zweilous01.github.io/shosetsu-kobo/ （変えない）
+- 形：ホーム画面に追加して使うWebアプリ。置き場はGitHub Pages（リポジトリ zweilous01/Shosetsu-kobo）
+- アドレス：https://zweilous01.github.io/Shosetsu-kobo/ （変えない）
 
 ## 決定事項
 - 原稿はスマホの中（ブラウザの保存庫 IndexedDB）に保存。外部には送らない
